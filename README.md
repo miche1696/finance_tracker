@@ -87,4 +87,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Author
 
-- **Michele** - [miche1696](https://github.com/miche1696) 
+- **Michele** - [miche1696](https://github.com/miche1696)
