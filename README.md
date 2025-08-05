@@ -41,7 +41,7 @@ A comprehensive Django-based web application for tracking personal finances and 
 ## Technology Stack
 
 - **Backend**: Django 5.2.4 (Python)
-- **Database**: SQLite (development), PostgreSQL ready (production)
+- **Database**: SQLite (development)
 - **Frontend**: Django Templates with Bootstrap 5
 - **Charts**: Chart.js for data visualization
 - **Filtering**: django-filter for advanced filtering
