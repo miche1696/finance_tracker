@@ -30,7 +30,8 @@ A comprehensive Django-based web application for tracking personal finances and 
   - JSON API endpoints for chart data
 - **Calendar Integration**: 
   - Monthly calendar view with daily expense totals
-  - Navigation between months
+  - Navigation between months with Previous/Next buttons
+  - Visual highlighting of high-expense days (>€500)
   - Visual representation of spending patterns
 
 ### Data Management
@@ -46,6 +47,7 @@ A comprehensive Django-based web application for tracking personal finances and 
 - **Charts**: Chart.js for data visualization
 - **Filtering**: django-filter for advanced filtering
 - **Authentication**: Django's built-in authentication system
+- **Icons**: Bootstrap Icons for enhanced UI
 
 ## Getting Started
 
@@ -127,7 +129,7 @@ finance_tracker/
 │           ├── expense_list.html    # Expense list with filters
 │           ├── expense_form.html    # Add/edit expense form
 │           ├── chart.html           # Chart visualization
-│           └── calendar.html        # Calendar view
+│           └── calendar.html        # Calendar view with navigation and highlighting
 ├── templates/               # Project-level templates
 │   └── registration/
 │       └── login.html       # Login template
@@ -148,7 +150,7 @@ finance_tracker/
 - `POST /expenses/add/` - Create new expense
 - `GET /expenses/chart/` - Chart visualization page
 - `GET /expenses/chart-data/` - JSON data for charts
-- `GET /expenses/calendar/` - Calendar view
+- `GET /expenses/calendar/` - Calendar view with navigation
 - `GET /expenses/calendar/?year=2024&month=3` - Specific month calendar
 
 ## Usage Examples
@@ -159,9 +161,10 @@ finance_tracker/
 - Filter by amount: Set minimum and maximum amount ranges
 
 ### Calendar Navigation
-- Navigate between months using URL parameters
-- Example: `/expenses/calendar/?year=2024&month=3` for March 2024
+- Navigate between months using Previous/Next buttons
+- URL parameters for direct navigation: `/expenses/calendar/?year=2024&month=3`
 - View daily expense totals directly in the calendar
+- Visual highlighting of days with expenses above €500 (yellow background, bold text)
 
 ### Chart Visualization
 - View spending patterns by category

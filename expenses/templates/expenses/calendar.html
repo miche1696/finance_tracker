@@ -1,6 +1,18 @@
 {% extends "expenses/base.html" %}
 {% block content %}
-  <h2>Expense Calendar: {{ month }}/{{ year }}</h2>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">Expense Calendar: {{ month }}/{{ year }}</h2>
+    <div class="btn-group" role="group">
+      <a href="{% url 'expenses:calendar' %}?year={{ prev_year }}&month={{ prev_month }}" 
+         class="btn btn-outline-primary">
+        <i class="bi bi-chevron-left"></i> Previous Month
+      </a>
+      <a href="{% url 'expenses:calendar' %}?year={{ next_year }}&month={{ next_month }}" 
+         class="btn btn-outline-primary">
+        Next Month <i class="bi bi-chevron-right"></i>
+      </a>
+    </div>
+  </div>
   <table class="table table-bordered">
     <thead>
       <tr>
@@ -17,7 +29,7 @@
       {% for week in calendar %}
         <tr>
           {% for cell in week %}
-            <td style="vertical-align: top;">
+            <td class="calendar-cell {% if cell.total > 500 %}high-expense{% endif %}" style="vertical-align: top;">
               {% if cell.day %}
                 <strong>{{ cell.day }}</strong><br/>
                 €{{ cell.total }}

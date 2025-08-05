@@ -38,9 +38,30 @@ class ExpenseCalendarView(LoginRequiredMixin, TemplateView):
         today = date.today()
         year  = int(self.request.GET.get('year', today.year))
         month = int(self.request.GET.get('month', today.month))
+        
+        # Calculate previous month/year
+        if month == 1:
+            prev_month = 12
+            prev_year = year - 1
+        else:
+            prev_month = month - 1
+            prev_year = year
+        
+        # Calculate next month/year
+        if month == 12:
+            next_month = 1
+            next_year = year + 1
+        else:
+            next_month = month + 1
+            next_year = year
+        
         ctx['calendar'] = get_month_calendar(year, month)
-        ctx['year']     = year
-        ctx['month']    = month
+        ctx['year'] = year
+        ctx['month'] = month
+        ctx['prev_year'] = prev_year
+        ctx['prev_month'] = prev_month
+        ctx['next_year'] = next_year
+        ctx['next_month'] = next_month
         return ctx
 
 
