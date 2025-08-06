@@ -1,5 +1,5 @@
-from django.shortcuts import render, redirect
-from django.views.generic import CreateView, TemplateView
+from django.shortcuts import render, redirect, get_object_or_404
+from django.views.generic import CreateView, TemplateView, UpdateView
 from django.urls import reverse_lazy
 from django_filters.views import FilterView
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -8,6 +8,13 @@ from django.contrib.auth import login
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Sum, Min, Max
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+from django.core.management import call_command
+from django.conf import settings
+import os
+import csv
+import tempfile
 from datetime import date
 from .models import Expense, UserCategory, UserSubcategory
 from .filters import ExpenseFilter
@@ -34,17 +41,7 @@ class ExpenseListView(LoginRequiredMixin, FilterView):
         if filterset:
             # Get the actual queryset for setting filter choices
             actual_queryset = self.get_queryset()
-            
-            # Set the choices for vendor and category filters
-            vendors = list(actual_queryset.values_list('vendor', flat=True).distinct().order_by('vendor'))
-            categories = list(actual_queryset.values_list('category', flat=True).distinct().order_by('category'))
-            
-            # Only set choices if we have data
-            if vendors:
-                filterset.filters['vendor'].choices = [(v, v) for v in vendors]
-            if categories:
-                filterset.filters['category'].choices = [(c, c) for c in categories]
-        
+            print(actual_queryset)
         return filterset
     
 
@@ -68,22 +65,7 @@ class ExpenseListView(LoginRequiredMixin, FilterView):
         )
         context['min_amount'] = amount_stats['min_amount'] or 0
         context['max_amount'] = amount_stats['max_amount'] or 1000
-        
-        # Get unique vendors and categories from base queryset (all available options)
-        vendors = list(base_queryset.values_list('vendor', flat=True).distinct().order_by('vendor'))
-        categories = list(base_queryset.values_list('category', flat=True).distinct().order_by('category'))
-        
-        context['vendors'] = vendors
-        context['categories'] = categories
-        
-        # Update filter choices only if we have data
-        if vendors:
-            context['filter'].filters['vendor'].choices = [(v, v) for v in vendors]
-        if categories:
-            context['filter'].filters['category'].choices = [(c, c) for c in categories]
-        
 
-        
         return context
 
 
@@ -101,10 +83,6 @@ class ExpenseCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         form.instance.user = self.request.user
         return super().form_valid(form)
-
-
-class ExpenseChartView(LoginRequiredMixin, TemplateView):
-    template_name = 'expenses/chart.html'
 
 
 class ExpenseCalendarView(LoginRequiredMixin, TemplateView):
@@ -141,12 +119,6 @@ class ExpenseCalendarView(LoginRequiredMixin, TemplateView):
         ctx['next_month'] = next_month
         return ctx
 
-
-def expense_category_data(request):
-    qs = Expense.objects.for_user(request.user).values('category').annotate(total=Sum('amount'))
-    labels = [row['category'] for row in qs]
-    data   = [float(row['total']) for row in qs]
-    return JsonResponse({'labels': labels, 'data': data})
 
 def add_category(request):
     if request.method == 'POST':
@@ -201,3 +173,94 @@ class UserRegistrationView(CreateView):
         login(self.request, self.object)
         messages.success(self.request, 'Account created successfully! Welcome to Finance Tracker.')
         return response
+
+
+def delete_expense(request, expense_id):
+    """Delete an expense with confirmation"""
+    if request.method == 'POST':
+        expense = get_object_or_404(Expense, id=expense_id, user=request.user)
+        expense.delete()
+        messages.success(request, f'Expense "{expense.vendor}" for ${expense.amount} has been deleted successfully.')
+        return redirect('expenses:list')
+    else:
+        # If not POST, redirect to list view
+        return redirect('expenses:list')
+
+
+class ExpenseUpdateView(LoginRequiredMixin, UpdateView):
+    model = Expense
+    form_class = ExpenseForm
+    template_name = 'expenses/expense_form.html'
+    success_url = reverse_lazy('expenses:list')
+    
+    def get_object(self, queryset=None):
+        """Get the expense object, ensuring it belongs to the current user"""
+        return get_object_or_404(Expense, id=self.kwargs['expense_id'], user=self.request.user)
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+    
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        messages.success(self.request, f'Expense "{form.instance.vendor}" has been updated successfully.')
+        return super().form_valid(form)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['is_update'] = True
+        context['expense'] = self.object
+        return context
+
+
+def import_expenses(request):
+    """Handle CSV file upload and import expenses"""
+    if request.method == 'POST':
+        if 'csv_file' not in request.FILES:
+            messages.error(request, 'Please select a CSV file to upload.')
+            return render(request, 'expenses/import_expenses.html')
+        
+        csv_file = request.FILES['csv_file']
+        
+        # Validate file type
+        if not csv_file.name.endswith('.csv'):
+            messages.error(request, 'Please upload a valid CSV file.')
+            return render(request, 'expenses/import_expenses.html')
+        
+        try:
+            # Save the uploaded file temporarily
+            file_path = default_storage.save(f'temp_imports/{csv_file.name}', ContentFile(csv_file.read()))
+            full_path = os.path.join(settings.MEDIA_ROOT, file_path)
+            
+            # Call the management command and capture output
+            from io import StringIO
+            from django.core.management import call_command
+            
+            output = StringIO()
+            call_command('import_expenses', full_path, username=request.user.username, stdout=output)
+            
+            # Clean up the temporary file
+            default_storage.delete(file_path)
+            
+            # Get the command output
+            command_output = output.getvalue()
+            output.close()
+            
+            # Check if categories/subcategories were created
+            if 'Created new category:' in command_output or 'Created new subcategory:' in command_output:
+                messages.success(request, 'Expenses imported successfully! New categories and subcategories were automatically created.')
+            else:
+                messages.success(request, 'Expenses imported successfully!')
+            
+            return redirect('expenses:list')
+            
+        except Exception as e:
+            # Clean up the temporary file if it exists
+            if 'file_path' in locals():
+                default_storage.delete(file_path)
+            
+            messages.error(request, f'Error importing expenses: {str(e)}')
+            return render(request, 'expenses/import_expenses.html')
+    
+    return render(request, 'expenses/import_expenses.html')

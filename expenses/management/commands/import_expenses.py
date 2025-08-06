@@ -1,7 +1,7 @@
 import csv
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
-from expenses.models import Expense
+from expenses.models import Expense, UserCategory, UserSubcategory
 from datetime import datetime
 
 class Command(BaseCommand):
@@ -88,6 +88,31 @@ class Command(BaseCommand):
                     else:
                         category = 'Other'
                 
+                # Create category if it doesn't exist
+                if category and category.strip():
+                    category_obj, category_created = UserCategory.objects.get_or_create(
+                        user=user,
+                        name=category.strip()
+                    )
+                    if category_created:
+                        self.stdout.write(
+                            self.style.SUCCESS(f'Created new category: {category}')
+                        )
+                
+                # Handle subcategory
+                subcategory = row.get('SubCategory', '').strip()
+                subcategory_obj = None
+                if subcategory and category_obj:
+                    subcategory_obj, subcategory_created = UserSubcategory.objects.get_or_create(
+                        user=user,
+                        category=category_obj,
+                        name=subcategory
+                    )
+                    if subcategory_created:
+                        self.stdout.write(
+                            self.style.SUCCESS(f'Created new subcategory: {category} > {subcategory}')
+                        )
+                
                 # Handle vendor field - some rows have empty vendor
                 vendor = row['Store / Vendor']
                 if not vendor or vendor.strip() == '':
@@ -101,8 +126,8 @@ class Command(BaseCommand):
                     indispensable=(row['INDISPENSABILE'].upper() in ['TRUE', '1', 'YES']),
                     avoidable=(row['EVITABILE'].upper() in ['TRUE', '1', 'YES']),
                     amount=amount,
-                    category=category,
-                    subcategory=row.get('SubCategory', ''),
+                    category=category_obj.name if category_obj else category,
+                    subcategory=subcategory_obj.name if subcategory_obj else subcategory,
                     notes=row.get('Notes (Optional)', '')
                 )
                 

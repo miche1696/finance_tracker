@@ -3,6 +3,7 @@
 {% block title %}Expense List{% endblock %}
 
 {% block content %}
+{% csrf_token %}
 <div class="expense-dashboard">
     <!-- Sidebar -->
     <div class="sidebar">
@@ -16,9 +17,6 @@
             <a href="{% url 'expenses:add' %}" class="nav-item">
                 <i class="bi bi-plus-circle"></i> Add Expense
             </a>
-            <a href="{% url 'expenses:chart' %}" class="nav-item">
-                <i class="bi bi-graph-up"></i> Charts
-            </a>
             <a href="{% url 'expenses:calendar' %}" class="nav-item">
                 <i class="bi bi-calendar3"></i> Calendar
             </a>
@@ -29,9 +27,14 @@
     <div class="main-content">
         <div class="content-header">
             <h1><i class="bi bi-list-ul"></i> Expense List</h1>
-            <a href="{% url 'expenses:add' %}" class="btn btn-success">
-                <i class="bi bi-plus-circle"></i> Add New Expense
-            </a>
+            <div class="header-actions">
+                <a href="{% url 'expenses:import' %}" class="btn btn-info me-2">
+                    <i class="bi bi-upload"></i> Import from CSV
+                </a>
+                <a href="{% url 'expenses:add' %}" class="btn btn-success">
+                    <i class="bi bi-plus-circle"></i> Add New Expense
+                </a>
+            </div>
         </div>
 
         <!-- Filters Section -->
@@ -66,56 +69,6 @@
                         </div>
                     </div>
 
-                    <!-- Vendor Filter -->
-                    <div class="filter-item">
-                        <div class="filter-icon">
-                            <i class="bi bi-shop"></i>
-                        </div>
-                        <div class="dropdown-container">
-                            <button class="btn btn-outline-secondary dropdown-toggle form-control-sm" type="button" data-bs-toggle="dropdown" id="vendorDropdown">
-                                <span class="dropdown-text">Vendors</span>
-                            </button>
-                            <ul class="dropdown-menu vendor-dropdown">
-                                <li><a class="dropdown-item" href="#" id="vendorSelectAll">Select All</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                {% for vendor in vendors %}
-                                <li>
-                                    <label class="dropdown-item">
-                                        <input type="checkbox" name="vendor" value="{{ vendor }}" 
-                                               {% if filter.form.vendor.value and vendor in filter.form.vendor.value %}checked{% endif %} class="vendor-checkbox">
-                                        {{ vendor }}
-                                    </label>
-                                </li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    </div>
-
-                    <!-- Category Filter -->
-                    <div class="filter-item">
-                        <div class="filter-icon">
-                            <i class="bi bi-tags"></i>
-                        </div>
-                        <div class="dropdown-container">
-                            <button class="btn btn-outline-secondary dropdown-toggle form-control-sm" type="button" data-bs-toggle="dropdown" id="categoryDropdown">
-                                <span class="dropdown-text">Categories</span>
-                            </button>
-                            <ul class="dropdown-menu category-dropdown">
-                                <li><a class="dropdown-item" href="#" id="categorySelectAll">Select All</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                {% for category in categories %}
-                                <li>
-                                    <label class="dropdown-item">
-                                        <input type="checkbox" name="category" value="{{ category }}" 
-                                               {% if filter.form.category.value and category in filter.form.category.value %}checked{% endif %} class="category-checkbox">
-                                        {{ category }}
-                                    </label>
-                                </li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    </div>
-
                     <!-- Filter Actions -->
                     <div class="filter-actions">
                         <button type="submit" class="btn btn-primary btn-sm">
@@ -140,8 +93,8 @@
                             <tr>
                                 <th><i class="bi bi-calendar3"></i> Date</th>
                                 <th><i class="bi bi-shop"></i> Vendor</th>
+                                <th><i class="bi bi-tag"></i> Category</th>
                                 <th><i class="bi bi-currency-dollar"></i> Amount</th>
-                                <th><i class="bi bi-tags"></i> Category</th>
                                 <th><i class="bi bi-gear"></i> Actions</th>
                             </tr>
                         </thead>
@@ -150,14 +103,18 @@
                             <tr class="{% if expense.amount > 100 %}high-expense{% endif %}">
                                 <td>{{ expense.date|date:"M d, Y" }}</td>
                                 <td>{{ expense.vendor }}</td>
+                                <td>{{ expense.category }}{% if expense.subcategory %} > {{ expense.subcategory }}{% endif %}</td>
                                 <td class="amount-cell">${{ expense.amount|floatformat:2 }}</td>
-                                <td><span class="badge bg-secondary">{{ expense.category }}</span></td>
                                 <td>
                                     <div class="btn-group btn-group-sm">
-                                        <button class="btn btn-outline-primary btn-sm" title="Edit">
+                                        <a href="{% url 'expenses:edit' expense.id %}" class="btn btn-outline-primary btn-sm" title="Edit">
                                             <i class="bi bi-pencil"></i>
-                                        </button>
-                                        <button class="btn btn-outline-danger btn-sm" title="Delete">
+                                        </a>
+                                        <button class="btn btn-outline-danger btn-sm delete-expense-btn" 
+                                                title="Delete" 
+                                                data-expense-id="{{ expense.id }}"
+                                                data-expense-vendor="{{ expense.vendor }}"
+                                                data-expense-amount="{{ expense.amount }}">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </div>
@@ -266,6 +223,12 @@
     padding: 1rem;
     border-bottom: 1px solid #dee2e6;
     background: white;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
 }
 
 .content-header h1 {
@@ -526,134 +489,73 @@ document.addEventListener('DOMContentLoaded', function() {
     const filterForm = document.getElementById('filterForm');
     const clearFiltersBtn = document.getElementById('clearFilters');
     
-    console.log('Filter form found:', filterForm);
-    console.log('Clear filters button found:', clearFiltersBtn);
-    
     // Get input elements
+    const dateAfterInput = document.querySelector('input[name="date_after"]');
+    const dateBeforeInput = document.querySelector('input[name="date_before"]');
     const amountMinInput = document.querySelector('input[name="amount_min"]');
     const amountMaxInput = document.querySelector('input[name="amount_max"]');
     
-    console.log('Amount inputs found:', amountMinInput, amountMaxInput);
-
-    // Vendor dropdown functionality
-    const vendorDropdown = document.getElementById('vendorDropdown');
-    const vendorSelectAll = document.getElementById('vendorSelectAll');
-    const vendorCheckboxes = document.querySelectorAll('.vendor-checkbox');
-
-    // Update dropdown button text based on selected items
-    function updateVendorDropdownText() {
-        const selectedCount = document.querySelectorAll('.vendor-checkbox:checked').length;
-        const dropdownText = vendorDropdown.querySelector('.dropdown-text');
-        if (selectedCount === 0 || selectedCount === vendorCheckboxes.length) {
-            dropdownText.textContent = 'All Vendors';
-        } else {
-            dropdownText.textContent = `${selectedCount} Vendor(s)`;
-        }
-    }
-
-    vendorSelectAll.addEventListener('click', function(e) {
-        e.preventDefault();
-        const allChecked = Array.from(vendorCheckboxes).every(cb => cb.checked);
-        vendorCheckboxes.forEach(checkbox => {
-            checkbox.checked = !allChecked;
-        });
-        updateVendorDropdownText();
-    });
-
-    vendorCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', updateVendorDropdownText);
-    });
-
-    // Initialize vendor dropdown text
-    updateVendorDropdownText();
-
-    // Category dropdown functionality
-    const categoryDropdown = document.getElementById('categoryDropdown');
-    const categorySelectAll = document.getElementById('categorySelectAll');
-    const categoryCheckboxes = document.querySelectorAll('.category-checkbox');
-
-    // Update dropdown button text based on selected items
-    function updateCategoryDropdownText() {
-        const selectedCount = document.querySelectorAll('.category-checkbox:checked').length;
-        const dropdownText = categoryDropdown.querySelector('.dropdown-text');
-        if (selectedCount === 0 || selectedCount === categoryCheckboxes.length) {
-            dropdownText.textContent = 'All Categories';
-        } else {
-            dropdownText.textContent = `${selectedCount} Category(ies)`;
-        }
-    }
-
-    categorySelectAll.addEventListener('click', function(e) {
-        e.preventDefault();
-        const allChecked = Array.from(categoryCheckboxes).every(cb => cb.checked);
-        categoryCheckboxes.forEach(checkbox => {
-            checkbox.checked = !allChecked;
-        });
-        updateCategoryDropdownText();
-    });
-
-    categoryCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', updateCategoryDropdownText);
-    });
-
-    // Initialize category dropdown text
-    updateCategoryDropdownText();
-
-    // Clear filters functionality
-    console.log('Setting up clear filters button...');
-    clearFiltersBtn.addEventListener('click', function() {
-        console.log('Clear filters button clicked!');
-        
-        // Clear all form inputs
-        filterForm.reset();
-        console.log('Form reset completed');
-        
-        // Uncheck all checkboxes
-        vendorCheckboxes.forEach(checkbox => checkbox.checked = false);
-        categoryCheckboxes.forEach(checkbox => checkbox.checked = false);
-        console.log('Checkboxes unchecked');
-        
-        // Update dropdown text
-        updateVendorDropdownText();
-        updateCategoryDropdownText();
-        console.log('Dropdown text updated');
-        
-        // Navigate to the clean URL without any parameters
-        console.log('Navigating to clean URL...');
-        window.location.href = window.location.pathname;
-    });
-
-    // Handle form submission to properly handle filtering
-    filterForm.addEventListener('submit', function(e) {
-        console.log('Form submission started');
-        
-        // Get all checked checkboxes
-        const checkedVendors = document.querySelectorAll('.vendor-checkbox:checked');
-        const checkedCategories = document.querySelectorAll('.category-checkbox:checked');
-        
-        // Temporarily disable unchecked checkboxes to prevent them from being submitted
-        const allVendorCheckboxes = document.querySelectorAll('.vendor-checkbox');
-        const allCategoryCheckboxes = document.querySelectorAll('.category-checkbox');
-        
-        allVendorCheckboxes.forEach(checkbox => {
-            if (!checkbox.checked) {
-                checkbox.disabled = true;
-            }
-        });
-        allCategoryCheckboxes.forEach(checkbox => {
-            if (!checkbox.checked) {
-                checkbox.disabled = true;
-            }
-        });
-        
-        // Re-enable checkboxes after form submission
-        setTimeout(() => {
-            allVendorCheckboxes.forEach(checkbox => checkbox.disabled = false);
-            allCategoryCheckboxes.forEach(checkbox => checkbox.disabled = false);
-        }, 100);
+    console.log('Input elements found:', {
+        dateAfter: dateAfterInput,
+        dateBefore: dateBeforeInput,
+        amountMin: amountMinInput,
+        amountMax: amountMaxInput
     });
     
-    console.log('Script initialization completed');
+    // Add event listener to clear filters button
+    if (clearFiltersBtn) {
+        clearFiltersBtn.addEventListener('click', function() {
+            console.log('Clear filters button clicked');
+            
+            // Clear all filter inputs
+            if (dateAfterInput) dateAfterInput.value = '';
+            if (dateBeforeInput) dateBeforeInput.value = '';
+            if (amountMinInput) amountMinInput.value = '';
+            if (amountMaxInput) amountMaxInput.value = '';
+            
+            // Submit the form to apply the cleared filters
+            if (filterForm) {
+                filterForm.submit();
+            }
+        });
+    }
+    
+    // Delete expense functionality
+    const deleteButtons = document.querySelectorAll('.delete-expense-btn');
+    
+    deleteButtons.forEach(function(button) {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const expenseId = this.getAttribute('data-expense-id');
+            const expenseVendor = this.getAttribute('data-expense-vendor');
+            const expenseAmount = this.getAttribute('data-expense-amount');
+            
+            // Show confirmation dialog
+            const confirmed = confirm(`Are you sure you want to delete the expense "${expenseVendor}" for $${expenseAmount}?\n\nThis action cannot be undone.`);
+            
+            if (confirmed) {
+                // Create a form and submit it
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/expenses/delete/${expenseId}/`;
+                
+                // Add CSRF token
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+                if (csrfToken) {
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = 'csrfmiddlewaretoken';
+                    csrfInput.value = csrfToken.value;
+                    form.appendChild(csrfInput);
+                }
+                
+                // Submit the form
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    });
 });
 </script>
 {% endblock %} 

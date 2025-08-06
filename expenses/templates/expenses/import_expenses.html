@@ -1,0 +1,424 @@
+{% extends 'expenses/base.html' %}
+
+{% block title %}Import Expenses{% endblock %}
+
+{% block content %}
+<div class="import-container">
+    <div class="import-header">
+        <h1 class="import-title">
+            <i class="bi bi-upload me-2"></i>
+            Import Expenses from CSV
+        </h1>
+        <p class="import-subtitle">
+            Upload a CSV file to import your expenses. The file should contain columns for date, vendor, amount, and category.
+        </p>
+    </div>
+
+    <div class="import-content">
+        <div class="import-card">
+            <div class="import-instructions">
+                <h3><i class="bi bi-info-circle me-2"></i>Instructions</h3>
+                <div class="instructions-content">
+                    <p>Your CSV file should include the following columns:</p>
+                    <ul>
+                        <li><strong>Date (MM-DD-YYYY):</strong> Date of the expense</li>
+                        <li><strong>Store / Vendor:</strong> Name of the store or vendor</li>
+                        <li><strong>$ Amount:</strong> Amount spent</li>
+                        <li><strong>Expense Category:</strong> Category of the expense</li>
+                        <li><strong>SubCategory:</strong> Subcategory (optional)</li>
+                        <li><strong>Notes (Optional):</strong> Additional notes</li>
+                    </ul>
+                    <p><strong>Note:</strong> The file should use semicolon (;) as the delimiter.</p>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Automatic Category Creation:</strong> New categories and subcategories found in your CSV will be automatically created and added to your available categories.
+                    </div>
+                </div>
+            </div>
+
+            <form method="post" enctype="multipart/form-data" class="import-form">
+                {% csrf_token %}
+                
+                <div class="file-upload-section">
+                    <div class="file-upload-area" id="fileUploadArea">
+                        <div class="file-upload-content">
+                            <i class="bi bi-cloud-upload"></i>
+                            <h4>Choose a CSV file or drag it here</h4>
+                            <p>Maximum file size: 10MB</p>
+                            <input type="file" name="csv_file" id="csvFile" accept=".csv" class="file-input" required>
+                            <button type="button" class="btn btn-primary" onclick="document.getElementById('csvFile').click()">
+                                <i class="bi bi-folder2-open me-2"></i>
+                                Select File
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="file-info" id="fileInfo" style="display: none;">
+                        <div class="file-details">
+                            <i class="bi bi-file-earmark-text"></i>
+                            <div class="file-text">
+                                <span class="file-name" id="fileName"></span>
+                                <span class="file-size" id="fileSize"></span>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-danger" id="removeFile">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="import-actions">
+                    <button type="submit" class="btn btn-success btn-lg" id="importBtn" disabled>
+                        <i class="bi bi-upload me-2"></i>
+                        Import Expenses
+                    </button>
+                    <a href="{% url 'expenses:list' %}" class="btn btn-outline-secondary btn-lg">
+                        <i class="bi bi-arrow-left me-2"></i>
+                        Back to List
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Sample CSV Format -->
+        <div class="sample-section">
+            <h3><i class="bi bi-table me-2"></i>Sample CSV Format</h3>
+            <div class="sample-table">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Date (MM-DD-YYYY)</th>
+                            <th>Store / Vendor</th>
+                            <th>$ Amount</th>
+                            <th>Expense Category</th>
+                            <th>SubCategory</th>
+                            <th>Notes (Optional)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>12-25-2023</td>
+                            <td>Walmart</td>
+                            <td>45.67</td>
+                            <td>Groceries</td>
+                            <td>Food</td>
+                            <td>Weekly shopping</td>
+                        </tr>
+                        <tr>
+                            <td>12-26-2023</td>
+                            <td>Shell Gas Station</td>
+                            <td>35.00</td>
+                            <td>Transportation</td>
+                            <td>Fuel</td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('csvFile');
+    const fileUploadArea = document.getElementById('fileUploadArea');
+    const fileInfo = document.getElementById('fileInfo');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const removeFile = document.getElementById('removeFile');
+    const importBtn = document.getElementById('importBtn');
+
+    // File input change handler
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            displayFileInfo(file);
+        }
+    });
+
+    // Drag and drop functionality
+    fileUploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        fileUploadArea.classList.add('dragover');
+    });
+
+    fileUploadArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        fileUploadArea.classList.remove('dragover');
+    });
+
+    fileUploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        fileUploadArea.classList.remove('dragover');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            const file = files[0];
+            if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
+                fileInput.files = files;
+                displayFileInfo(file);
+            } else {
+                showMessage('Please select a valid CSV file.', 'error');
+            }
+        }
+    });
+
+    // Remove file handler
+    removeFile.addEventListener('click', function() {
+        fileInput.value = '';
+        fileUploadArea.style.display = 'block';
+        fileInfo.style.display = 'none';
+        importBtn.disabled = true;
+    });
+
+    function displayFileInfo(file) {
+        // Validate file size (10MB limit)
+        if (file.size > 10 * 1024 * 1024) {
+            showMessage('File size must be less than 10MB.', 'error');
+            return;
+        }
+
+        // Validate file type
+        if (!file.name.endsWith('.csv')) {
+            showMessage('Please select a valid CSV file.', 'error');
+            return;
+        }
+
+        fileName.textContent = file.name;
+        fileSize.textContent = formatFileSize(file.size);
+        
+        fileUploadArea.style.display = 'none';
+        fileInfo.style.display = 'block';
+        importBtn.disabled = false;
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function showMessage(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type === 'error' ? 'danger' : 'success'} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        const form = document.querySelector('form');
+        form.insertBefore(alertDiv, form.firstChild);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+});
+</script>
+
+<style>
+.import-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+.import-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.import-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.import-subtitle {
+    font-size: 1.1rem;
+    color: #6c757d;
+    margin: 0;
+}
+
+.import-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.import-card {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+}
+
+.import-instructions {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.import-instructions h3 {
+    color: #495057;
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+}
+
+.instructions-content ul {
+    margin-top: 0.5rem;
+    padding-left: 1.5rem;
+}
+
+.instructions-content li {
+    margin-bottom: 0.5rem;
+    color: #6c757d;
+}
+
+.file-upload-section {
+    margin-bottom: 2rem;
+}
+
+.file-upload-area {
+    border: 2px dashed #dee2e6;
+    border-radius: 0.75rem;
+    padding: 3rem 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+}
+
+.file-upload-area.dragover {
+    border-color: #007bff;
+    background: #e3f2fd;
+}
+
+.file-upload-content i {
+    font-size: 3rem;
+    color: #6c757d;
+    margin-bottom: 1rem;
+}
+
+.file-upload-content h4 {
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.file-upload-content p {
+    color: #6c757d;
+    margin-bottom: 1.5rem;
+}
+
+.file-input {
+    display: none;
+}
+
+.file-info {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 1rem;
+}
+
+.file-details {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.file-details i {
+    font-size: 1.5rem;
+    color: #28a745;
+}
+
+.file-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.file-name {
+    font-weight: 600;
+    color: #495057;
+}
+
+.file-size {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.import-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e9ecef;
+}
+
+.btn-lg {
+    padding: 0.875rem 2rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.sample-section {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+}
+
+.sample-section h3 {
+    color: #495057;
+    margin-bottom: 1.5rem;
+    font-size: 1.25rem;
+}
+
+.sample-table {
+    overflow-x: auto;
+}
+
+.sample-table .table {
+    font-size: 0.875rem;
+}
+
+.sample-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+}
+
+@media (max-width: 768px) {
+    .import-container {
+        padding: 1rem;
+    }
+    
+    .import-title {
+        font-size: 2rem;
+    }
+    
+    .import-card {
+        padding: 1.5rem;
+    }
+    
+    .file-upload-area {
+        padding: 2rem 1rem;
+    }
+    
+    .import-actions {
+        flex-direction: column;
+    }
+    
+    .btn-lg {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %} 

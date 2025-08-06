@@ -45,6 +45,13 @@ class ExpenseForm(forms.ModelForm):
             subcategory_choices.extend([(sub.name, sub.name) for sub in subcategories])
             
             self.fields['subcategory'].widget.choices = subcategory_choices
+            
+            # Set initial values for category and subcategory if editing an existing expense
+            if self.instance and self.instance.pk:
+                if self.instance.category:
+                    self.fields['category'].initial = self.instance.category
+                if self.instance.subcategory:
+                    self.fields['subcategory'].initial = self.instance.subcategory
     
     def clean_category(self):
         category = self.cleaned_data.get('category')
@@ -55,4 +62,39 @@ class ExpenseForm(forms.ModelForm):
     def clean_subcategory(self):
         subcategory = self.cleaned_data.get('subcategory')
         # Subcategory is optional, so we don't validate if it's empty
-        return subcategory 
+        return subcategory
+    
+    def save(self, commit=True):
+        expense = super().save(commit=False)
+        
+        # Handle category - store as string in the expense model
+        category_name = self.cleaned_data.get('category')
+        if category_name:
+            expense.category = category_name
+            # Also create/update the UserCategory for consistency
+            UserCategory.objects.get_or_create(
+                user=expense.user,
+                name=category_name
+            )
+        
+        # Handle subcategory - store as string in the expense model
+        subcategory_name = self.cleaned_data.get('subcategory')
+        if subcategory_name and category_name:
+            expense.subcategory = subcategory_name
+            # Also create/update the UserSubcategory for consistency
+            try:
+                category_obj = UserCategory.objects.get(user=expense.user, name=category_name)
+                UserSubcategory.objects.get_or_create(
+                    user=expense.user,
+                    category=category_obj,
+                    name=subcategory_name
+                )
+            except UserCategory.DoesNotExist:
+                # If category doesn't exist, just store the subcategory as string
+                pass
+        else:
+            expense.subcategory = ''
+        
+        if commit:
+            expense.save()
+        return expense 

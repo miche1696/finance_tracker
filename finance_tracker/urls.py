@@ -20,6 +20,8 @@ from django.contrib.auth import views as auth_views
 from django.shortcuts import redirect
 from django.contrib.auth import logout
 from django.http import HttpResponseRedirect
+from django.conf import settings
+from django.conf.urls.static import static
 from expenses.views import UserRegistrationView
 
 def redirect_to_expenses(request):
@@ -37,3 +39,7 @@ urlpatterns = [
     path('logout/', logout_view, name='logout'),
     path('expenses/', include('expenses.urls')),
 ]
+
+# Serve media files during development
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

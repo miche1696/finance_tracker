@@ -1,15 +1,17 @@
 {% extends 'expenses/base.html' %}
 
-{% block title %}Add Expense{% endblock %}
+{% block title %}{% if is_update %}Edit Expense{% else %}Add Expense{% endif %}{% endblock %}
 
 {% block content %}
 <div class="expense-form-container">
     <div class="expense-form-header">
         <h1 class="expense-form-title">
-            <i class="bi bi-plus-circle-fill text-primary me-2"></i>
-            Add New Expense
+            <i class="bi {% if is_update %}bi-pencil-fill text-warning{% else %}bi-plus-circle-fill text-primary{% endif %} me-2"></i>
+            {% if is_update %}Edit Expense{% else %}Add New Expense{% endif %}
         </h1>
-        <p class="expense-form-subtitle">Track your spending to better manage your finances</p>
+        <p class="expense-form-subtitle">
+            {% if is_update %}Modify your expense details{% else %}Track your spending to better manage your finances{% endif %}
+        </p>
     </div>
 
     <div class="expense-form-content">
@@ -168,7 +170,7 @@
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary btn-lg">
                     <i class="bi bi-check-circle me-2"></i>
-                    Save Expense
+                    {% if is_update %}Update Expense{% else %}Save Expense{% endif %}
                 </button>
                 <a href="{% url 'expenses:list' %}" class="btn btn-outline-secondary btn-lg">
                     <i class="bi bi-x-circle me-2"></i>
