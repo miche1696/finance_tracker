@@ -65,6 +65,10 @@ class ExpenseListView(LoginRequiredMixin, FilterView):
         )
         context['min_amount'] = amount_stats['min_amount'] or 0
         context['max_amount'] = amount_stats['max_amount'] or 1000
+        
+        # Get unique categories and subcategories for filter dropdowns
+        context['categories'] = base_queryset.values_list('category', flat=True).distinct().order_by('category')
+        context['subcategories'] = base_queryset.exclude(subcategory='').values_list('subcategory', flat=True).distinct().order_by('subcategory')
 
         return context
 

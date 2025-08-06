@@ -69,14 +69,66 @@
         <!-- Expense List -->
         <div class="expense-list-section">
             {% if object_list %}
-                <div class="table-responsive">
+                <div class="table-container">
                     <table class="table table-hover">
                         <thead class="table-light">
                             <tr>
                                 <th><i class="bi bi-calendar3"></i> Date</th>
                                 <th><i class="bi bi-shop"></i> Vendor</th>
-                                <th><i class="bi bi-tag"></i> Category</th>
-                                <th><i class="bi bi-folder2-open"></i> Subcategory</th>
+                                <th class="filterable-header">
+                                    <div class="header-content">
+                                        <i class="bi bi-tag"></i> Category
+                                        <button class="filter-toggle" data-column="category">
+                                            <i class="bi bi-funnel"></i>
+                                        </button>
+                                    </div>
+                                    <div class="filter-dropdown" id="category-filter">
+                                        <div class="filter-search">
+                                            <input type="text" placeholder="Search categories..." class="filter-input">
+                                        </div>
+                                        <div class="filter-options">
+                                            <label class="filter-option">
+                                                <input type="checkbox" value="all" checked> All Categories
+                                            </label>
+                                            {% for category in categories %}
+                                            <label class="filter-option">
+                                                <input type="checkbox" value="{{ category }}"> {{ category }}
+                                            </label>
+                                            {% endfor %}
+                                        </div>
+                                        <div class="filter-actions">
+                                            <button class="btn btn-sm btn-primary apply-filter">Apply</button>
+                                            <button class="btn btn-sm btn-outline-secondary clear-filter">Clear</button>
+                                        </div>
+                                    </div>
+                                </th>
+                                <th class="filterable-header">
+                                    <div class="header-content">
+                                        <i class="bi bi-folder2-open"></i> Subcategory
+                                        <button class="filter-toggle" data-column="subcategory">
+                                            <i class="bi bi-funnel"></i>
+                                        </button>
+                                    </div>
+                                    <div class="filter-dropdown" id="subcategory-filter">
+                                        <div class="filter-search">
+                                            <input type="text" placeholder="Search subcategories..." class="filter-input">
+                                        </div>
+                                        <div class="filter-options">
+                                            <label class="filter-option">
+                                                <input type="checkbox" value="all" checked> All Subcategories
+                                            </label>
+                                            {% for subcategory in subcategories %}
+                                            <label class="filter-option">
+                                                <input type="checkbox" value="{{ subcategory }}"> {{ subcategory }}
+                                            </label>
+                                            {% endfor %}
+                                        </div>
+                                        <div class="filter-actions">
+                                            <button class="btn btn-sm btn-primary apply-filter">Apply</button>
+                                            <button class="btn btn-sm btn-outline-secondary clear-filter">Clear</button>
+                                        </div>
+                                    </div>
+                                </th>
                                 <th><i class="bi bi-currency-dollar"></i> Amount</th>
                                 <th><i class="bi bi-gear"></i> Actions</th>
                             </tr>
@@ -137,6 +189,9 @@
 <style>
 .expense-dashboard {
     height: 100%;
+    display: flex;
+    padding: 1rem;
+    gap: 1rem;
 }
 
 
@@ -144,16 +199,22 @@
 .main-content {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    flex: 1;
+    overflow: hidden;
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
 .content-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem;
+    padding: 1.5rem;
     border-bottom: 1px solid #dee2e6;
-    background: white;
+    background: #f8f9fa;
+    flex-shrink: 0;
+    border-radius: 1rem 1rem 0 0;
 }
 
 .header-actions {
@@ -169,8 +230,10 @@
 }
 
 .filters-section {
-    background: white;
+    background: #f8f9fa;
     border-bottom: 1px solid #dee2e6;
+    flex-shrink: 0;
+    padding: 0 1.5rem;
 }
 
 .filters-toolbar {
@@ -295,7 +358,9 @@
 
 .expense-list-section {
     flex: 1;
-    overflow: auto;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 .table {
@@ -317,6 +382,100 @@
 .amount-cell {
     font-weight: 600;
     color: #28a745;
+}
+
+/* Filterable Header Styles */
+.filterable-header {
+    position: relative;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.filter-toggle {
+    background: none;
+    border: none;
+    color: #6c757d;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filter-toggle:hover {
+    background: #e9ecef;
+    color: #495057;
+}
+
+.filter-toggle.active {
+    background: #007bff;
+    color: white;
+}
+
+.filter-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    display: none;
+    min-width: 250px;
+}
+
+.filter-dropdown.show {
+    display: block;
+}
+
+.filter-search {
+    padding: 0.75rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.filter-input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+}
+
+.filter-options {
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 0.5rem 0;
+}
+
+.filter-option {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: background-color 0.15s ease;
+}
+
+.filter-option:hover {
+    background-color: #f8f9fa;
+}
+
+.filter-option input[type="checkbox"] {
+    margin-right: 0.5rem;
+}
+
+.filter-actions {
+    padding: 0.75rem;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
 }
 
 
@@ -346,13 +505,25 @@
     color: #495057;
 }
 
+.table-container {
+    flex: 1;
+    overflow: auto;
+    position: relative;
+}
+
+.table {
+    margin-bottom: 0;
+    width: 100%;
+}
+
 .expense-summary {
     display: flex;
     gap: 2rem;
-    padding: 1rem;
+    padding: 1.5rem;
     background: #f8f9fa;
     border-top: 1px solid #dee2e6;
-    margin-top: 1rem;
+    flex-shrink: 0;
+    border-radius: 0 0 1rem 1rem;
 }
 
 .summary-item {
@@ -440,6 +611,118 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
+    // Column Filter Functionality
+    const filterToggles = document.querySelectorAll('.filter-toggle');
+    const filterDropdowns = document.querySelectorAll('.filter-dropdown');
+    
+    // Close all dropdowns when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.filterable-header')) {
+            filterDropdowns.forEach(dropdown => {
+                dropdown.classList.remove('show');
+            });
+            filterToggles.forEach(toggle => {
+                toggle.classList.remove('active');
+            });
+        }
+    });
+    
+    // Toggle filter dropdowns
+    filterToggles.forEach(toggle => {
+        toggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const column = this.getAttribute('data-column');
+            const dropdown = document.getElementById(`${column}-filter`);
+            
+            // Close other dropdowns
+            filterDropdowns.forEach(d => {
+                if (d !== dropdown) {
+                    d.classList.remove('show');
+                }
+            });
+            filterToggles.forEach(t => {
+                if (t !== this) {
+                    t.classList.remove('active');
+                }
+            });
+            
+            // Toggle current dropdown
+            dropdown.classList.toggle('show');
+            this.classList.toggle('active');
+        });
+    });
+    
+    // Filter search functionality
+    const filterInputs = document.querySelectorAll('.filter-input');
+    filterInputs.forEach(input => {
+        input.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const options = this.closest('.filter-dropdown').querySelectorAll('.filter-option');
+            
+            options.forEach(option => {
+                const text = option.textContent.toLowerCase();
+                if (text.includes(searchTerm)) {
+                    option.style.display = 'flex';
+                } else {
+                    option.style.display = 'none';
+                }
+            });
+        });
+    });
+    
+    // Apply filters
+    const applyButtons = document.querySelectorAll('.apply-filter');
+    applyButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const dropdown = this.closest('.filter-dropdown');
+            const column = dropdown.id.replace('-filter', '');
+            const selectedOptions = dropdown.querySelectorAll('input[type="checkbox"]:checked:not([value="all"])');
+            
+            // Get selected values
+            const selectedValues = Array.from(selectedOptions).map(option => option.value);
+            
+            // Apply filter to table rows
+            const tableRows = document.querySelectorAll('tbody tr');
+            tableRows.forEach(row => {
+                const cell = row.querySelector(`td:nth-child(${column === 'category' ? '3' : '4'})`);
+                const cellValue = cell.textContent.trim();
+                
+                if (selectedValues.length === 0 || selectedValues.includes(cellValue)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // Close dropdown
+            dropdown.classList.remove('show');
+            dropdown.closest('.filterable-header').querySelector('.filter-toggle').classList.remove('active');
+        });
+    });
+    
+    // Clear filters
+    const clearButtons = document.querySelectorAll('.clear-filter');
+    clearButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const dropdown = this.closest('.filter-dropdown');
+            
+            // Uncheck all options except "All"
+            dropdown.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                checkbox.checked = checkbox.value === 'all';
+            });
+            
+            // Show all rows
+            const tableRows = document.querySelectorAll('tbody tr');
+            tableRows.forEach(row => {
+                row.style.display = '';
+            });
+            
+            // Close dropdown
+            dropdown.classList.remove('show');
+            dropdown.closest('.filterable-header').querySelector('.filter-toggle').classList.remove('active');
+        });
+    });
     
     // Delete expense functionality
     const deleteButtons = document.querySelectorAll('.delete-expense-btn');
