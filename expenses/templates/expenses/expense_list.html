@@ -3,58 +3,657 @@
 {% block title %}Expense List{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-12">
-        <h1 class="mb-4">Expense List</h1>
-        
-        <!-- Filter Form -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">Filter Expenses</h5>
-            </div>
-            <div class="card-body">
-                <form method="get">
-                    {{ filter.form }}
-                    <button type="submit" class="btn btn-primary mt-2">Filter</button>
-                    <a href="{% url 'expenses:list' %}" class="btn btn-secondary mt-2">Clear</a>
-                </form>
-            </div>
+<div class="expense-dashboard">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h4><i class="bi bi-list-ul"></i> Navigation</h4>
+        </div>
+        <div class="sidebar-nav">
+            <a href="{% url 'expenses:list' %}" class="nav-item active">
+                <i class="bi bi-list-ul"></i> Expense List
+            </a>
+            <a href="{% url 'expenses:add' %}" class="nav-item">
+                <i class="bi bi-plus-circle"></i> Add Expense
+            </a>
+            <a href="{% url 'expenses:chart' %}" class="nav-item">
+                <i class="bi bi-graph-up"></i> Charts
+            </a>
+            <a href="{% url 'expenses:calendar' %}" class="nav-item">
+                <i class="bi bi-calendar3"></i> Calendar
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="content-header">
+            <h1><i class="bi bi-list-ul"></i> Expense List</h1>
+            <a href="{% url 'expenses:add' %}" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Add New Expense
+            </a>
         </div>
 
-        <!-- Add New Expense Link -->
-        <div class="mb-3">
-            <a href="{% url 'expenses:add' %}" class="btn btn-success">Add New Expense</a>
+        <!-- Filters Section -->
+        <div class="filters-section">
+            <form method="get" class="filters-form" id="filterForm">
+                <div class="filters-toolbar">
+                    <!-- Date Range Filter -->
+                    <div class="filter-item">
+                        <div class="filter-icon">
+                            <i class="bi bi-calendar3"></i>
+                        </div>
+                        <div class="filter-inputs">
+                            <input type="date" name="date_after" value="{{ filter.form.date_after.value|default:'' }}" 
+                                   class="form-control form-control-sm" placeholder="From">
+                            <span class="filter-separator">to</span>
+                            <input type="date" name="date_before" value="{{ filter.form.date_before.value|default:'' }}" 
+                                   class="form-control form-control-sm" placeholder="To">
+                        </div>
+                    </div>
+
+                    <!-- Amount Range Filter -->
+                    <div class="filter-item">
+                        <div class="filter-icon">
+                            <i class="bi bi-currency-dollar"></i>
+                        </div>
+                        <div class="filter-inputs">
+                            <input type="number" name="amount_min" value="{{ filter.form.amount_min.value|default:'' }}" 
+                                   class="form-control form-control-sm" placeholder="Min" step="0.01" min="0">
+                            <span class="filter-separator">to</span>
+                            <input type="number" name="amount_max" value="{{ filter.form.amount_max.value|default:'' }}" 
+                                   class="form-control form-control-sm" placeholder="Max" step="0.01" min="0">
+                        </div>
+                    </div>
+
+                    <!-- Vendor Filter -->
+                    <div class="filter-item">
+                        <div class="filter-icon">
+                            <i class="bi bi-shop"></i>
+                        </div>
+                        <div class="dropdown-container">
+                            <button class="btn btn-outline-secondary dropdown-toggle form-control-sm" type="button" data-bs-toggle="dropdown" id="vendorDropdown">
+                                <span class="dropdown-text">Vendors</span>
+                            </button>
+                            <ul class="dropdown-menu vendor-dropdown">
+                                <li><a class="dropdown-item" href="#" id="vendorSelectAll">Select All</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                {% for vendor in vendors %}
+                                <li>
+                                    <label class="dropdown-item">
+                                        <input type="checkbox" name="vendor" value="{{ vendor }}" 
+                                               {% if filter.form.vendor.value and vendor in filter.form.vendor.value %}checked{% endif %} class="vendor-checkbox">
+                                        {{ vendor }}
+                                    </label>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Category Filter -->
+                    <div class="filter-item">
+                        <div class="filter-icon">
+                            <i class="bi bi-tags"></i>
+                        </div>
+                        <div class="dropdown-container">
+                            <button class="btn btn-outline-secondary dropdown-toggle form-control-sm" type="button" data-bs-toggle="dropdown" id="categoryDropdown">
+                                <span class="dropdown-text">Categories</span>
+                            </button>
+                            <ul class="dropdown-menu category-dropdown">
+                                <li><a class="dropdown-item" href="#" id="categorySelectAll">Select All</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                {% for category in categories %}
+                                <li>
+                                    <label class="dropdown-item">
+                                        <input type="checkbox" name="category" value="{{ category }}" 
+                                               {% if filter.form.category.value and category in filter.form.category.value %}checked{% endif %} class="category-checkbox">
+                                        {{ category }}
+                                    </label>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Filter Actions -->
+                    <div class="filter-actions">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="bi bi-search"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" title="Reset all filters" id="clearFilters">
+                            <i class="bi bi-arrow-clockwise"></i> Reset Filters
+                        </button>
+                    </div>
+                </div>
+            </form>
         </div>
+
+
 
         <!-- Expense List -->
-        {% if object_list %}
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Vendor</th>
-                            <th>Amount</th>
-                            <th>Category</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for expense in object_list %}
-                        <tr>
-                            <td>{{ expense.date }}</td>
-                            <td>{{ expense.vendor }}</td>
-                            <td>${{ expense.amount }}</td>
-                            <td>{{ expense.category }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% else %}
-            <div class="alert alert-info">
-                No expenses found. <a href="{% url 'expenses:add' %}">Add your first expense</a>
-            </div>
-        {% endif %}
+        <div class="expense-list-section">
+            {% if object_list %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th><i class="bi bi-calendar3"></i> Date</th>
+                                <th><i class="bi bi-shop"></i> Vendor</th>
+                                <th><i class="bi bi-currency-dollar"></i> Amount</th>
+                                <th><i class="bi bi-tags"></i> Category</th>
+                                <th><i class="bi bi-gear"></i> Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for expense in object_list %}
+                            <tr class="{% if expense.amount > 100 %}high-expense{% endif %}">
+                                <td>{{ expense.date|date:"M d, Y" }}</td>
+                                <td>{{ expense.vendor }}</td>
+                                <td class="amount-cell">${{ expense.amount|floatformat:2 }}</td>
+                                <td><span class="badge bg-secondary">{{ expense.category }}</span></td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary btn-sm" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger btn-sm" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Summary -->
+                <div class="expense-summary">
+                    <div class="summary-item">
+                        <span class="summary-label">Total Expenses:</span>
+                        <span class="summary-value">{{ object_list|length }}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Total Amount:</span>
+                        <span class="summary-value">${{ total_amount|floatformat:2 }}</span>
+                    </div>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-inbox"></i>
+                    <h4>No expenses found</h4>
+                    <p>Try adjusting your filters or add your first expense.</p>
+                    <a href="{% url 'expenses:add' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Add First Expense
+                    </a>
+                </div>
+            {% endif %}
+        </div>
     </div>
 </div>
+
+<style>
+.expense-dashboard {
+    display: flex;
+    height: calc(100vh - 100px);
+    margin: -1rem;
+}
+
+.sidebar {
+    width: 250px;
+    background: #f8f9fa;
+    border-right: 1px solid #dee2e6;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-header {
+    padding: 1rem;
+    border-bottom: 1px solid #dee2e6;
+    background: #e9ecef;
+}
+
+.sidebar-header h4 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #495057;
+}
+
+.sidebar-nav {
+    flex: 1;
+    padding: 1rem 0;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    color: #6c757d;
+    text-decoration: none;
+    border-left: 3px solid transparent;
+    transition: all 0.2s;
+}
+
+.nav-item:hover {
+    background: #e9ecef;
+    color: #495057;
+    text-decoration: none;
+}
+
+.nav-item.active {
+    background: #007bff;
+    color: white;
+    border-left-color: #0056b3;
+}
+
+.nav-item i {
+    margin-right: 0.5rem;
+    width: 16px;
+}
+
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #dee2e6;
+    background: white;
+}
+
+.content-header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #495057;
+}
+
+.filters-section {
+    background: white;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.filters-toolbar {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    align-items: center;
+    background: #f8f9fa;
+    border-radius: 0.5rem;
+    border: 1px solid #e9ecef;
+}
+
+.filter-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 180px;
+    max-width: 300px;
+}
+
+.filter-icon {
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.filter-icon i {
+    font-size: 1.1rem;
+    color: #6c757d;
+}
+
+.filter-inputs {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.filter-inputs input[type="date"],
+.filter-inputs input[type="number"] {
+    flex: 1;
+    min-width: 0;
+    border-radius: 0.375rem;
+    border: 1px solid #dee2e6;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.filter-inputs input[type="date"] label,
+.filter-inputs input[type="number"] label {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-bottom: 0.25rem;
+}
+
+.filter-separator {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin: 0 0.25rem;
+    font-weight: 500;
+}
+
+.dropdown-container {
+    position: relative;
+}
+
+.dropdown-menu {
+    width: 100%;
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    margin-top: 0.25rem;
+    min-width: 200px;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: #495057;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    transition: background-color 0.15s ease-in-out;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+    color: #495057;
+}
+
+.dropdown-item.active {
+    background-color: #007bff;
+    color: white;
+}
+
+.dropdown-item input[type="checkbox"] {
+    margin-right: 0.5rem;
+    width: 16px;
+    height: 16px;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
+.expense-list-section {
+    flex: 1;
+    overflow: auto;
+    padding: 1rem;
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.table td {
+    vertical-align: middle;
+    font-size: 0.9rem;
+}
+
+.amount-cell {
+    font-weight: 600;
+    color: #28a745;
+}
+
+.high-expense {
+    background-color: #fff3cd !important;
+}
+
+.high-expense .amount-cell {
+    color: #856404 !important;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: #dee2e6;
+}
+
+.empty-state h4 {
+    margin-bottom: 0.5rem;
+    color: #495057;
+}
+
+.expense-summary {
+    display: flex;
+    gap: 2rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    margin-top: 1rem;
+}
+
+.summary-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.summary-label {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.summary-value {
+    font-weight: 600;
+    color: #495057;
+    font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+    .expense-dashboard {
+        flex-direction: column;
+        height: auto;
+    }
+    
+    .sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .filters-toolbar {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+    }
+
+    .filter-item {
+        flex: none;
+        width: 100%;
+        max-width: none;
+    }
+
+    .filter-inputs {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .filter-inputs input[type="date"],
+    .filter-inputs input[type="number"] {
+        flex: none;
+        width: 100%;
+    }
+    
+    .filter-actions {
+        margin-left: 0;
+        justify-content: center;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM Content Loaded - Starting script execution');
+    
+    // Get form and button references
+    const filterForm = document.getElementById('filterForm');
+    const clearFiltersBtn = document.getElementById('clearFilters');
+    
+    console.log('Filter form found:', filterForm);
+    console.log('Clear filters button found:', clearFiltersBtn);
+    
+    // Get input elements
+    const amountMinInput = document.querySelector('input[name="amount_min"]');
+    const amountMaxInput = document.querySelector('input[name="amount_max"]');
+    
+    console.log('Amount inputs found:', amountMinInput, amountMaxInput);
+
+    // Vendor dropdown functionality
+    const vendorDropdown = document.getElementById('vendorDropdown');
+    const vendorSelectAll = document.getElementById('vendorSelectAll');
+    const vendorCheckboxes = document.querySelectorAll('.vendor-checkbox');
+
+    // Update dropdown button text based on selected items
+    function updateVendorDropdownText() {
+        const selectedCount = document.querySelectorAll('.vendor-checkbox:checked').length;
+        const dropdownText = vendorDropdown.querySelector('.dropdown-text');
+        if (selectedCount === 0 || selectedCount === vendorCheckboxes.length) {
+            dropdownText.textContent = 'All Vendors';
+        } else {
+            dropdownText.textContent = `${selectedCount} Vendor(s)`;
+        }
+    }
+
+    vendorSelectAll.addEventListener('click', function(e) {
+        e.preventDefault();
+        const allChecked = Array.from(vendorCheckboxes).every(cb => cb.checked);
+        vendorCheckboxes.forEach(checkbox => {
+            checkbox.checked = !allChecked;
+        });
+        updateVendorDropdownText();
+    });
+
+    vendorCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateVendorDropdownText);
+    });
+
+    // Initialize vendor dropdown text
+    updateVendorDropdownText();
+
+    // Category dropdown functionality
+    const categoryDropdown = document.getElementById('categoryDropdown');
+    const categorySelectAll = document.getElementById('categorySelectAll');
+    const categoryCheckboxes = document.querySelectorAll('.category-checkbox');
+
+    // Update dropdown button text based on selected items
+    function updateCategoryDropdownText() {
+        const selectedCount = document.querySelectorAll('.category-checkbox:checked').length;
+        const dropdownText = categoryDropdown.querySelector('.dropdown-text');
+        if (selectedCount === 0 || selectedCount === categoryCheckboxes.length) {
+            dropdownText.textContent = 'All Categories';
+        } else {
+            dropdownText.textContent = `${selectedCount} Category(ies)`;
+        }
+    }
+
+    categorySelectAll.addEventListener('click', function(e) {
+        e.preventDefault();
+        const allChecked = Array.from(categoryCheckboxes).every(cb => cb.checked);
+        categoryCheckboxes.forEach(checkbox => {
+            checkbox.checked = !allChecked;
+        });
+        updateCategoryDropdownText();
+    });
+
+    categoryCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateCategoryDropdownText);
+    });
+
+    // Initialize category dropdown text
+    updateCategoryDropdownText();
+
+    // Clear filters functionality
+    console.log('Setting up clear filters button...');
+    clearFiltersBtn.addEventListener('click', function() {
+        console.log('Clear filters button clicked!');
+        
+        // Clear all form inputs
+        filterForm.reset();
+        console.log('Form reset completed');
+        
+        // Uncheck all checkboxes
+        vendorCheckboxes.forEach(checkbox => checkbox.checked = false);
+        categoryCheckboxes.forEach(checkbox => checkbox.checked = false);
+        console.log('Checkboxes unchecked');
+        
+        // Update dropdown text
+        updateVendorDropdownText();
+        updateCategoryDropdownText();
+        console.log('Dropdown text updated');
+        
+        // Navigate to the clean URL without any parameters
+        console.log('Navigating to clean URL...');
+        window.location.href = window.location.pathname;
+    });
+
+    // Handle form submission to properly handle filtering
+    filterForm.addEventListener('submit', function(e) {
+        console.log('Form submission started');
+        
+        // Get all checked checkboxes
+        const checkedVendors = document.querySelectorAll('.vendor-checkbox:checked');
+        const checkedCategories = document.querySelectorAll('.category-checkbox:checked');
+        
+        // Temporarily disable unchecked checkboxes to prevent them from being submitted
+        const allVendorCheckboxes = document.querySelectorAll('.vendor-checkbox');
+        const allCategoryCheckboxes = document.querySelectorAll('.category-checkbox');
+        
+        allVendorCheckboxes.forEach(checkbox => {
+            if (!checkbox.checked) {
+                checkbox.disabled = true;
+            }
+        });
+        allCategoryCheckboxes.forEach(checkbox => {
+            if (!checkbox.checked) {
+                checkbox.disabled = true;
+            }
+        });
+        
+        // Re-enable checkboxes after form submission
+        setTimeout(() => {
+            allVendorCheckboxes.forEach(checkbox => checkbox.disabled = false);
+            allCategoryCheckboxes.forEach(checkbox => checkbox.disabled = false);
+        }, 100);
+    });
+    
+    console.log('Script initialization completed');
+});
+</script>
 {% endblock %} 

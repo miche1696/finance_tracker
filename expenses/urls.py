@@ -1,5 +1,8 @@
 from django.urls import path
-from .views import ExpenseListView, ExpenseCreateView, ExpenseChartView, ExpenseCalendarView, expense_category_data
+from .views import (
+    ExpenseListView, ExpenseCreateView, ExpenseChartView, ExpenseCalendarView, 
+    expense_category_data, add_category, add_subcategory
+)
 
 app_name = 'expenses'
 urlpatterns = [
@@ -8,4 +11,6 @@ urlpatterns = [
     path('chart/', ExpenseChartView.as_view(), name='chart'),
     path('chart-data/', expense_category_data, name='chart-data'),
     path('calendar/', ExpenseCalendarView.as_view(), name='calendar'),
+    path('add-category/', add_category, name='add-category'),
+    path('add-subcategory/', add_subcategory, name='add-subcategory'),
 ] 

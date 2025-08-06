@@ -17,10 +17,23 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
+from django.shortcuts import redirect
+from django.contrib.auth import logout
+from django.http import HttpResponseRedirect
+from expenses.views import UserRegistrationView
+
+def redirect_to_expenses(request):
+    return redirect('expenses:list')
+
+def logout_view(request):
+    logout(request)
+    return HttpResponseRedirect('/login/?next=/expenses/')
 
 urlpatterns = [
+    path('', redirect_to_expenses, name='home'),
     path('admin/', admin.site.urls),
     path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
-    path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
+    path('register/', UserRegistrationView.as_view(), name='register'),
+    path('logout/', logout_view, name='logout'),
     path('expenses/', include('expenses.urls')),
 ]

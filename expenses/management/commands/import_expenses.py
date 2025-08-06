@@ -1,5 +1,6 @@
 import csv
 from django.core.management.base import BaseCommand
+from django.contrib.auth.models import User
 from expenses.models import Expense
 from datetime import datetime
 
@@ -8,9 +9,19 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('csv_path', type=str)
+        parser.add_argument('--username', type=str, required=True, help='Username to assign expenses to')
 
     def handle(self, *args, **options):
         path = options['csv_path']
+        username = options['username']
+        
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            self.stdout.write(
+                self.style.ERROR(f'User "{username}" does not exist. Please create the user first.')
+            )
+            return
         with open(path, newline='', encoding='utf-8') as f:
             reader = csv.DictReader(f, delimiter=';')
             
@@ -85,6 +96,7 @@ class Command(BaseCommand):
                 Expense.objects.update_or_create(
                     date=date_obj,
                     vendor=vendor,
+                    user=user,
                     exclude=(row['Escludi'].upper() in ['TRUE', '1', 'YES']),
                     indispensable=(row['INDISPENSABILE'].upper() in ['TRUE', '1', 'YES']),
                     avoidable=(row['EVITABILE'].upper() in ['TRUE', '1', 'YES']),

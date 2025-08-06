@@ -3,22 +3,784 @@
 {% block title %}Add Expense{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-8 offset-md-2">
-        <h1 class="mb-4">Add New Expense</h1>
-        
-        <div class="card">
-            <div class="card-body">
-                <form method="post">
-                    {% csrf_token %}
-                    {{ form.as_p }}
-                    <div class="mt-3">
-                        <button type="submit" class="btn btn-primary">Save Expense</button>
-                        <a href="{% url 'expenses:list' %}" class="btn btn-secondary">Cancel</a>
+<div class="expense-form-container">
+    <div class="expense-form-header">
+        <h1 class="expense-form-title">
+            <i class="bi bi-plus-circle-fill text-primary me-2"></i>
+            Add New Expense
+        </h1>
+        <p class="expense-form-subtitle">Track your spending to better manage your finances</p>
+    </div>
+
+    <div class="expense-form-content">
+        <form method="post" class="expense-form">
+            {% csrf_token %}
+            
+            <div class="row g-4">
+                <!-- Left Column - Main Details -->
+                <div class="col-lg-6">
+                    <div class="form-section">
+                        <h3 class="section-title">
+                            <i class="bi bi-receipt me-2"></i>
+                            Expense Details
+                        </h3>
+                        
+                        <!-- Date Field -->
+                        <div class="form-group">
+                            <label for="{{ form.date.id_for_label }}" class="form-label">
+                                <i class="bi bi-calendar3 me-1"></i>
+                                Date
+                            </label>
+                            <div class="input-group">
+                                <input type="date" 
+                                       name="{{ form.date.name }}" 
+                                       id="{{ form.date.id_for_label }}"
+                                       class="form-control form-control-lg"
+                                       value="{% if form.date.value %}{{ form.date.value|date:'Y-m-d' }}{% else %}{% now 'Y-m-d' %}{% endif %}"
+                                       required>
+                                <button class="btn btn-outline-secondary" type="button" id="calendar-trigger">
+                                    <i class="bi bi-calendar"></i>
+                                </button>
+                            </div>
+                            {% if form.date.errors %}
+                                <div class="error-message">{{ form.date.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Vendor Field -->
+                        <div class="form-group">
+                            <label for="{{ form.vendor.id_for_label }}" class="form-label">
+                                <i class="bi bi-shop me-1"></i>
+                                Vendor / Store
+                            </label>
+                            {{ form.vendor }}
+                            {% if form.vendor.errors %}
+                                <div class="error-message">{{ form.vendor.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Amount Field -->
+                        <div class="form-group">
+                            <label for="{{ form.amount.id_for_label }}" class="form-label">
+                                <i class="bi bi-currency-dollar me-1"></i>
+                                Amount
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                {{ form.amount }}
+                            </div>
+                            {% if form.amount.errors %}
+                                <div class="error-message">{{ form.amount.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Notes Field -->
+                        <div class="form-group">
+                            <label for="{{ form.notes.id_for_label }}" class="form-label">
+                                <i class="bi bi-chat-text me-1"></i>
+                                Notes (Optional)
+                            </label>
+                            {{ form.notes }}
+                            {% if form.notes.errors %}
+                                <div class="error-message">{{ form.notes.errors.0 }}</div>
+                            {% endif %}
+                        </div>
                     </div>
-                </form>
+                </div>
+
+                <!-- Right Column - Categories & Options -->
+                <div class="col-lg-6">
+                    <div class="form-section">
+                        <h3 class="section-title">
+                            <i class="bi bi-tags me-2"></i>
+                            Categories & Options
+                        </h3>
+
+                        <!-- Category Field -->
+                        <div class="form-group">
+                            <label for="{{ form.category.id_for_label }}" class="form-label">
+                                <i class="bi bi-folder me-1"></i>
+                                Category
+                            </label>
+                            <div class="input-group">
+                                {{ form.category }}
+                                <button class="btn btn-outline-secondary" type="button" id="add-category-btn" title="Add New Category">
+                                    <i class="bi bi-plus"></i>
+                                </button>
+                            </div>
+                            {% if form.category.errors %}
+                                <div class="error-message">{{ form.category.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Subcategory Field -->
+                        <div class="form-group">
+                            <label for="{{ form.subcategory.id_for_label }}" class="form-label">
+                                <i class="bi bi-folder2-open me-1"></i>
+                                Subcategory (Optional)
+                            </label>
+                            <div class="input-group">
+                                {{ form.subcategory }}
+                                <button class="btn btn-outline-secondary" type="button" id="add-subcategory-btn" title="Add New Subcategory">
+                                    <i class="bi bi-plus"></i>
+                                </button>
+                            </div>
+                            {% if form.subcategory.errors %}
+                                <div class="error-message">{{ form.subcategory.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Checkboxes Section -->
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="bi bi-gear me-1"></i>
+                                Expense Options
+                            </label>
+                            <div class="checkbox-group">
+                                <div class="form-check">
+                                    {{ form.exclude }}
+                                    <label class="form-check-label" for="{{ form.exclude.id_for_label }}">
+                                        <i class="bi bi-x-circle me-1"></i>
+                                        Exclude from reports
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    {{ form.indispensable }}
+                                    <label class="form-check-label" for="{{ form.indispensable.id_for_label }}">
+                                        <i class="bi bi-star me-1"></i>
+                                        Indispensable expense
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    {{ form.avoidable }}
+                                    <label class="form-check-label" for="{{ form.avoidable.id_for_label }}">
+                                        <i class="bi bi-exclamation-triangle me-1"></i>
+                                        Avoidable expense
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bi bi-check-circle me-2"></i>
+                    Save Expense
+                </button>
+                <a href="{% url 'expenses:list' %}" class="btn btn-outline-secondary btn-lg">
+                    <i class="bi bi-x-circle me-2"></i>
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Category Modal -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addCategoryModalLabel">
+                    <i class="bi bi-folder-plus me-2"></i>
+                    Add New Category
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="new-category-name" class="form-label">Category Name</label>
+                    <input type="text" class="form-control" id="new-category-name" placeholder="Enter category name">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="save-category-btn">Save Category</button>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Subcategory Modal -->
+<div class="modal fade" id="addSubcategoryModal" tabindex="-1" aria-labelledby="addSubcategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addSubcategoryModalLabel">
+                    <i class="bi bi-folder2-plus me-2"></i>
+                    Add New Subcategory
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="new-subcategory-name" class="form-label">Subcategory Name</label>
+                    <input type="text" class="form-control" id="new-subcategory-name" placeholder="Enter subcategory name">
+                </div>
+                <div class="mb-3">
+                    <label for="subcategory-category" class="form-label">Parent Category</label>
+                    <select class="form-control" id="subcategory-category">
+                        <option value="">Select a category...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="save-subcategory-btn">Save Subcategory</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Calendar Modal -->
+<div class="modal fade" id="calendarModal" tabindex="-1" aria-labelledby="calendarModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="calendarModalLabel">
+                    <i class="bi bi-calendar3 me-2"></i>
+                    Select Date
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="calendar-container"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="select-date-btn">Select Date</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dateInput = document.getElementById('{{ form.date.id_for_label }}');
+    const calendarTrigger = document.getElementById('calendar-trigger');
+    const calendarModal = new bootstrap.Modal(document.getElementById('calendarModal'));
+    const calendarContainer = document.getElementById('calendar-container');
+    const selectDateBtn = document.getElementById('select-date-btn');
+    
+    let selectedDate = new Date();
+    
+    // Set default date to today if empty
+    if (!dateInput.value) {
+        const today = new Date();
+        dateInput.value = today.toISOString().split('T')[0];
+    }
+    
+    // Calendar trigger button
+    calendarTrigger.addEventListener('click', function() {
+        selectedDate = new Date(dateInput.value || new Date());
+        renderCalendar();
+        calendarModal.show();
+    });
+    
+    // Render calendar
+    function renderCalendar() {
+        const year = selectedDate.getFullYear();
+        const month = selectedDate.getMonth();
+        
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const startDate = new Date(firstDay);
+        startDate.setDate(startDate.getDate() - firstDay.getDay());
+        
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                           'July', 'August', 'September', 'October', 'November', 'December'];
+        
+        let calendarHTML = `
+            <div class="text-center mb-3">
+                <button class="btn btn-sm btn-outline-secondary me-2" onclick="changeMonth(-1)">&lt;</button>
+                <strong>${monthNames[month]} ${year}</strong>
+                <button class="btn btn-sm btn-outline-secondary ms-2" onclick="changeMonth(1)">&gt;</button>
+            </div>
+            <div class="calendar-grid">
+                <div class="calendar-header">
+                    <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                </div>
+                <div class="calendar-body">
+        `;
+        
+        let currentDate = new Date(startDate);
+        let weekCount = 0;
+        
+        while (currentDate <= lastDay || weekCount < 6) {
+            if (currentDate.getDay() === 0) {
+                calendarHTML += '<div class="calendar-week">';
+            }
+            
+            const isCurrentMonth = currentDate.getMonth() === month;
+            const isSelected = currentDate.toDateString() === selectedDate.toDateString();
+            const isToday = currentDate.toDateString() === new Date().toDateString();
+            
+            let dayClass = 'calendar-day';
+            if (!isCurrentMonth) dayClass += ' other-month';
+            if (isSelected) dayClass += ' selected';
+            if (isToday) dayClass += ' today';
+            
+            calendarHTML += `<div class="${dayClass}" data-date="${currentDate.toISOString().split('T')[0]}">${currentDate.getDate()}</div>`;
+            
+            if (currentDate.getDay() === 6) {
+                calendarHTML += '</div>';
+                weekCount++;
+            }
+            
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+        
+        calendarHTML += '</div></div>';
+        calendarContainer.innerHTML = calendarHTML;
+        
+        // Add click handlers to calendar days
+        document.querySelectorAll('.calendar-day').forEach(day => {
+            day.addEventListener('click', function() {
+                document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('selected'));
+                this.classList.add('selected');
+                selectedDate = new Date(this.dataset.date);
+            });
+        });
+    }
+    
+    // Month navigation
+    window.changeMonth = function(delta) {
+        selectedDate.setMonth(selectedDate.getMonth() + delta);
+        renderCalendar();
+    };
+    
+    // Select date button
+    selectDateBtn.addEventListener('click', function() {
+        dateInput.value = selectedDate.toISOString().split('T')[0];
+        calendarModal.hide();
+    });
+    
+    // Double click on date input to open calendar
+    dateInput.addEventListener('dblclick', function() {
+        calendarTrigger.click();
+    });
+    
+    // Category and Subcategory dynamic dropdowns
+    const categorySelect = document.getElementById('category-select');
+    const subcategorySelect = document.getElementById('subcategory-select');
+    const addCategoryBtn = document.getElementById('add-category-btn');
+    const addSubcategoryBtn = document.getElementById('add-subcategory-btn');
+    
+    // Category modal elements
+    const addCategoryModal = new bootstrap.Modal(document.getElementById('addCategoryModal'));
+    const newCategoryNameInput = document.getElementById('new-category-name');
+    const saveCategoryBtn = document.getElementById('save-category-btn');
+    
+    // Subcategory modal elements
+    const addSubcategoryModal = new bootstrap.Modal(document.getElementById('addSubcategoryModal'));
+    const newSubcategoryNameInput = document.getElementById('new-subcategory-name');
+    const subcategoryCategorySelect = document.getElementById('subcategory-category');
+    const saveSubcategoryBtn = document.getElementById('save-subcategory-btn');
+    
+    // Add Category functionality
+    addCategoryBtn.addEventListener('click', function() {
+        newCategoryNameInput.value = '';
+        addCategoryModal.show();
+    });
+    
+    saveCategoryBtn.addEventListener('click', function() {
+        const categoryName = newCategoryNameInput.value.trim();
+        if (categoryName) {
+            addCategory(categoryName);
+        } else {
+            showMessage('Please enter a category name', 'error');
+        }
+    });
+    
+    newCategoryNameInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            saveCategoryBtn.click();
+        }
+    });
+    
+    function addCategory(name) {
+        fetch('{% url "expenses:add-category" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: `name=${encodeURIComponent(name)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Add new option to select
+                const option = new Option(name, name);
+                categorySelect.insertBefore(option, categorySelect.lastElementChild);
+                categorySelect.value = name;
+                
+                // Close modal
+                addCategoryModal.hide();
+                
+                // Show success message
+                showMessage('Category added successfully!', 'success');
+            } else {
+                showMessage(data.error || 'Failed to add category', 'error');
+            }
+        })
+        .catch(error => {
+            showMessage('Error adding category', 'error');
+        });
+    }
+    
+    // Add Subcategory functionality
+    addSubcategoryBtn.addEventListener('click', function() {
+        // Populate category dropdown in subcategory modal
+        populateSubcategoryCategoryDropdown();
+        newSubcategoryNameInput.value = '';
+        subcategoryCategorySelect.value = '';
+        addSubcategoryModal.show();
+    });
+    
+    saveSubcategoryBtn.addEventListener('click', function() {
+        const subcategoryName = newSubcategoryNameInput.value.trim();
+        const categoryName = subcategoryCategorySelect.value;
+        
+        if (subcategoryName && categoryName) {
+            addSubcategory(subcategoryName, categoryName);
+        } else {
+            showMessage('Please enter both subcategory name and select a category', 'error');
+        }
+    });
+    
+    newSubcategoryNameInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            saveSubcategoryBtn.click();
+        }
+    });
+    
+    function populateSubcategoryCategoryDropdown() {
+        // Clear existing options except the first one
+        subcategoryCategorySelect.innerHTML = '<option value="">Select a category...</option>';
+        
+        // Add all categories from the main category select
+        Array.from(categorySelect.options).forEach(option => {
+            if (option.value && option.value !== '') {
+                const newOption = new Option(option.text, option.value);
+                subcategoryCategorySelect.appendChild(newOption);
+            }
+        });
+    }
+    
+    function addSubcategory(name, categoryName) {
+        fetch('{% url "expenses:add-subcategory" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: `name=${encodeURIComponent(name)}&category=${encodeURIComponent(categoryName)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Add new option to select
+                const option = new Option(name, name);
+                subcategorySelect.insertBefore(option, subcategorySelect.lastElementChild);
+                subcategorySelect.value = name;
+                
+                // Close modal
+                addSubcategoryModal.hide();
+                
+                // Show success message
+                showMessage('Subcategory added successfully!', 'success');
+            } else {
+                showMessage(data.error || 'Failed to add subcategory', 'error');
+            }
+        })
+        .catch(error => {
+            showMessage('Error adding subcategory', 'error');
+        });
+    }
+    
+    // Message display function
+    function showMessage(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        const form = document.querySelector('form');
+        form.insertBefore(alertDiv, form.firstChild);
+        
+        // Auto-remove after 3 seconds
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 3000);
+    }
+});
+</script>
+
+<style>
+/* Full page layout */
+.expense-form-container {
+    min-height: calc(100vh - 120px);
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+}
+
+.expense-form-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding: 1rem 0;
+}
+
+.expense-form-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.expense-form-subtitle {
+    font-size: 1.1rem;
+    color: #6c757d;
+    margin: 0;
+}
+
+.expense-form-content {
+    flex: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.expense-form {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+}
+
+/* Form sections */
+.form-section {
+    background: #f8f9fa;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    height: 100%;
+    border: 1px solid #e9ecef;
+}
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #dee2e6;
+}
+
+/* Form groups */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.form-control {
+    border: 2px solid #e9ecef;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.form-control-lg {
+    padding: 1rem 1.25rem;
+    font-size: 1.1rem;
+}
+
+/* Input groups */
+.input-group-text {
+    background-color: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-right: none;
+    color: #6c757d;
+    font-weight: 600;
+}
+
+.input-group .form-control {
+    border-left: none;
+}
+
+.input-group .form-control:focus {
+    border-left: none;
+}
+
+/* Checkbox group */
+.checkbox-group {
+    background: white;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    border: 1px solid #e9ecef;
+}
+
+.form-check {
+    margin-bottom: 0.75rem;
+    padding-left: 2rem;
+}
+
+.form-check:last-child {
+    margin-bottom: 0;
+}
+
+.form-check-input {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-left: -2rem;
+    border: 2px solid #dee2e6;
+}
+
+.form-check-input:checked {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.form-check-label {
+    font-weight: 500;
+    color: #495057;
+    cursor: pointer;
+}
+
+/* Action buttons */
+.form-actions {
+    text-align: center;
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid #e9ecef;
+}
+
+.btn-lg {
+    padding: 0.875rem 2rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 0.5rem;
+}
+
+/* Error messages */
+.error-message {
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+    font-weight: 500;
+}
+
+/* Calendar styles */
+.calendar-grid {
+    font-family: Arial, sans-serif;
+}
+
+.calendar-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    background-color: #f8f9fa;
+    font-weight: bold;
+    text-align: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.calendar-header > div {
+    padding: 4px;
+}
+
+.calendar-body {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+}
+
+.calendar-week {
+    display: contents;
+}
+
+.calendar-day {
+    padding: 8px;
+    text-align: center;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background-color 0.2s;
+}
+
+.calendar-day:hover {
+    background-color: #e9ecef;
+}
+
+.calendar-day.other-month {
+    color: #6c757d;
+}
+
+.calendar-day.selected {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.calendar-day.today {
+    font-weight: bold;
+    border-color: #007bff;
+}
+
+.calendar-day.today.selected {
+    background-color: #0056b3;
+}
+
+/* Responsive adjustments */
+@media (max-width: 991.98px) {
+    .expense-form {
+        padding: 1.5rem;
+    }
+    
+    .form-section {
+        margin-bottom: 1.5rem;
+    }
+    
+    .expense-form-title {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .expense-form {
+        padding: 1rem;
+    }
+    
+    .form-section {
+        padding: 1rem;
+    }
+    
+    .expense-form-title {
+        font-size: 1.75rem;
+    }
+    
+    .btn-lg {
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+    }
+}
+</style>
 {% endblock %} 

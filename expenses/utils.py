@@ -4,16 +4,15 @@ from decimal import Decimal
 from django.db.models import Sum
 from .models import Expense
 
-def get_month_calendar(year: int, month: int):
+def get_month_calendar(year: int, month: int, user=None):
     # Build a matrix of dates for the month, weeks start on Monday
     cal = calendar.Calendar(firstweekday=0)
     # Aggregate totals per date
-    qs = (
-        Expense.objects
-        .filter(date__year=year, date__month=month)
-        .values('date')
-        .annotate(total=Sum('amount'))
-    )
+    if user:
+        qs = Expense.objects.for_user(user).filter(date__year=year, date__month=month)
+    else:
+        qs = Expense.objects.filter(date__year=year, date__month=month)
+    qs = qs.values('date').annotate(total=Sum('amount'))
     totals = {item['date']: item['total'] or Decimal('0.00') for item in qs}
 
     month_matrix = []
