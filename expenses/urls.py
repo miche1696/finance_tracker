@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (
-    ExpenseListView, ExpenseCreateView, ExpenseCalendarView, 
+    ExpenseListView, ExpenseCreateView, ExpenseCalendarView, ExpenseChartView,
     add_category, add_subcategory, delete_expense, ExpenseUpdateView, import_expenses
 )
 
@@ -10,6 +10,7 @@ urlpatterns = [
     path('add/', ExpenseCreateView.as_view(), name='add'),
     path('edit/<int:expense_id>/', ExpenseUpdateView.as_view(), name='edit'),
     path('calendar/', ExpenseCalendarView.as_view(), name='calendar'),
+    path('chart/', ExpenseChartView.as_view(), name='chart'),
     path('import/', import_expenses, name='import'),
     path('add-category/', add_category, name='add-category'),
     path('add-subcategory/', add_subcategory, name='add-subcategory'),

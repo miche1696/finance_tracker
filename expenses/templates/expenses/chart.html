@@ -1,0 +1,155 @@
+{% extends 'expenses/base.html' %}
+
+{% block title %}Expense Charts{% endblock %}
+
+{% block content %}
+<div class="chart-container">
+    <div class="chart-header">
+        <h1 class="chart-title">
+            <i class="bi bi-bar-chart me-2"></i>
+            Expense Analytics & Charts
+        </h1>
+        <p class="chart-subtitle">
+            Visualize your spending patterns and financial insights
+        </p>
+    </div>
+
+    <div class="chart-content">
+        <!-- Placeholder for future charts -->
+        <div class="chart-placeholder">
+            <div class="placeholder-icon">
+                <i class="bi bi-graph-up"></i>
+            </div>
+            <h3>Charts Coming Soon</h3>
+            <p>We're working on beautiful visualizations for your expense data.</p>
+            <div class="placeholder-features">
+                <div class="feature-item">
+                    <i class="bi bi-pie-chart"></i>
+                    <span>Category Breakdown</span>
+                </div>
+                <div class="feature-item">
+                    <i class="bi bi-graph-up"></i>
+                    <span>Spending Trends</span>
+                </div>
+                <div class="feature-item">
+                    <i class="bi bi-calendar-range"></i>
+                    <span>Monthly Analysis</span>
+                </div>
+                <div class="feature-item">
+                    <i class="bi bi-cash-stack"></i>
+                    <span>Budget Tracking</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.chart-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.chart-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.chart-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.chart-subtitle {
+    font-size: 1.1rem;
+    color: #6c757d;
+    margin: 0;
+}
+
+.chart-content {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    padding: 3rem;
+    text-align: center;
+}
+
+.chart-placeholder {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.placeholder-icon {
+    font-size: 4rem;
+    color: #667eea;
+    margin-bottom: 1.5rem;
+}
+
+.chart-placeholder h3 {
+    font-size: 1.75rem;
+    color: #495057;
+    margin-bottom: 1rem;
+}
+
+.chart-placeholder p {
+    font-size: 1.1rem;
+    color: #6c757d;
+    margin-bottom: 2rem;
+}
+
+.placeholder-features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.feature-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 0.5rem;
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.feature-item:hover {
+    background: #e9ecef;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.feature-item i {
+    font-size: 1.5rem;
+    color: #667eea;
+}
+
+.feature-item span {
+    font-weight: 600;
+    color: #495057;
+}
+
+@media (max-width: 768px) {
+    .chart-title {
+        font-size: 2rem;
+    }
+    
+    .chart-content {
+        padding: 2rem 1.5rem;
+    }
+    
+    .placeholder-features {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .placeholder-icon {
+        font-size: 3rem;
+    }
+}
+</style>
+{% endblock %} 

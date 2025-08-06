@@ -120,6 +120,16 @@ class ExpenseCalendarView(LoginRequiredMixin, TemplateView):
         return ctx
 
 
+class ExpenseChartView(LoginRequiredMixin, TemplateView):
+    template_name = 'expenses/chart.html'
+    
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        # For now, just return empty context
+        # Later we can add chart data here
+        return ctx
+
+
 def add_category(request):
     if request.method == 'POST':
         name = request.POST.get('name', '').strip()
