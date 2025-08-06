@@ -575,8 +575,6 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM Content Loaded - Starting script execution');
-    
     // Get form and button references
     const filterForm = document.getElementById('filterForm');
     const clearFiltersBtn = document.getElementById('clearFilters');
@@ -587,18 +585,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const amountMinInput = document.querySelector('input[name="amount_min"]');
     const amountMaxInput = document.querySelector('input[name="amount_max"]');
     
-    console.log('Input elements found:', {
-        dateAfter: dateAfterInput,
-        dateBefore: dateBeforeInput,
-        amountMin: amountMinInput,
-        amountMax: amountMaxInput
-    });
-    
     // Add event listener to clear filters button
     if (clearFiltersBtn) {
         clearFiltersBtn.addEventListener('click', function() {
-            console.log('Clear filters button clicked');
-            
             // Clear all filter inputs
             if (dateAfterInput) dateAfterInput.value = '';
             if (dateBeforeInput) dateBeforeInput.value = '';

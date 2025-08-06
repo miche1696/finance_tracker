@@ -3,32 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Finance Tracker - Manage and track your personal expenses">
+    <meta name="author" content="Finance Tracker">
+    
     <title>{% block title %}Finance Tracker{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- External CSS Dependencies -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    
     <style>
+        /* ===== GLOBAL STYLES ===== */
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --sidebar-width: 280px;
+            --border-radius: 0.5rem;
+            --transition-speed: 0.3s;
+            --shadow-light: 0 2px 10px rgba(0, 0, 0, 0.1);
+            --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
         }
 
+        /* ===== LAYOUT STRUCTURE ===== */
         .app-container {
             display: flex;
             height: 100vh;
+            overflow: hidden;
         }
 
-        /* Sidebar Styles */
+        /* ===== SIDEBAR COMPONENT ===== */
         .sidebar {
-            width: 280px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: var(--sidebar-width);
+            background: var(--primary-gradient);
             color: white;
             display: flex;
             flex-direction: column;
-            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            box-shadow: var(--shadow-light);
             z-index: 1000;
+            position: relative;
         }
 
+        /* Sidebar Header */
         .sidebar-header {
             padding: 2rem 1.5rem 1rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -42,13 +68,15 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            transition: opacity var(--transition-speed) ease;
         }
 
         .sidebar-brand:hover {
-            color: rgba(255, 255, 255, 0.8);
+            opacity: 0.8;
             text-decoration: none;
         }
 
+        /* Sidebar Navigation */
         .sidebar-nav {
             flex: 1;
             padding: 1rem 0;
@@ -61,9 +89,10 @@
             padding: 0.875rem 1.5rem;
             color: rgba(255, 255, 255, 0.8);
             text-decoration: none;
-            transition: all 0.3s ease;
+            transition: all var(--transition-speed) ease;
             border-left: 3px solid transparent;
             margin: 0.25rem 0;
+            position: relative;
         }
 
         .nav-item:hover {
@@ -71,6 +100,7 @@
             color: white;
             text-decoration: none;
             border-left-color: rgba(255, 255, 255, 0.3);
+            transform: translateX(4px);
         }
 
         .nav-item.active {
@@ -86,6 +116,7 @@
             font-size: 1.1rem;
         }
 
+        /* Sidebar Footer */
         .sidebar-footer {
             padding: 1rem 1.5rem;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -97,13 +128,14 @@
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: white;
-            border-radius: 0.5rem;
+            border-radius: var(--border-radius);
             text-decoration: none;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
-            transition: all 0.3s ease;
+            transition: all var(--transition-speed) ease;
+            font-weight: 500;
         }
 
         .logout-btn:hover {
@@ -111,21 +143,24 @@
             color: white;
             text-decoration: none;
             transform: translateY(-1px);
+            box-shadow: var(--shadow-medium);
         }
 
-        /* Main Content Area */
+        /* ===== MAIN CONTENT AREA ===== */
         .main-content {
             flex: 1;
             background: #f8f9fa;
             overflow: hidden;
+            position: relative;
         }
 
         .content-wrapper {
             height: 100%;
-            overflow: hidden;
+            overflow-y: auto;
+            overflow-x: hidden;
         }
 
-        /* Responsive Design */
+        /* ===== RESPONSIVE DESIGN ===== */
         @media (max-width: 768px) {
             .app-container {
                 flex-direction: column;
@@ -141,6 +176,12 @@
                 display: flex;
                 overflow-x: auto;
                 padding: 0.5rem;
+                scrollbar-width: none; /* Firefox */
+                -ms-overflow-style: none; /* IE/Edge */
+            }
+            
+            .sidebar-nav::-webkit-scrollbar {
+                display: none; /* Chrome/Safari/Opera */
             }
             
             .nav-item {
@@ -149,6 +190,11 @@
                 margin: 0 0.25rem;
                 border-left: none;
                 border-bottom: 2px solid transparent;
+                white-space: nowrap;
+            }
+            
+            .nav-item:hover {
+                transform: translateY(-2px);
             }
             
             .nav-item.active {
@@ -165,82 +211,242 @@
             }
         }
 
-        /* Utility Classes */
-        .high-expense {
-            background-color: #fff3cd !important;
-            font-weight: bold !important;
-        }
-        
+        /* ===== UTILITY CLASSES ===== */
+        /* Bootstrap Overrides */
         .form-control {
-            border-radius: 0.375rem;
+            border-radius: var(--border-radius);
+            border: 1px solid #dee2e6;
+            transition: border-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+        }
+
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
         }
         
         .btn {
-            border-radius: 0.375rem;
+            border-radius: var(--border-radius);
+            transition: all var(--transition-speed) ease;
+            font-weight: 500;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
         }
         
         .card {
-            border-radius: 0.5rem;
+            border-radius: var(--border-radius);
             box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            border: 1px solid rgba(0, 0, 0, 0.125);
         }
         
         .card-header {
             background-color: #f8f9fa;
             border-bottom: 1px solid #dee2e6;
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
+        }
+
+        /* Custom Utility Classes */
+        .text-gradient {
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .shadow-custom {
+            box-shadow: var(--shadow-light);
+        }
+
+        .transition-smooth {
+            transition: all var(--transition-speed) ease;
+        }
+
+        /* ===== EXPENSE LEVEL STYLING SYSTEM ===== */
+        .low-expense {
+            background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+            border-color: #bee5eb;
+        }
+
+        .low-expense .expense-amount,
+        .low-expense .amount-cell {
+            background: rgba(23, 162, 184, 0.15);
+            color: #0c5460;
+        }
+
+        .medium-expense {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border-color: #ffeaa7;
+        }
+
+        .medium-expense .expense-amount,
+        .medium-expense .amount-cell {
+            background: rgba(255, 193, 7, 0.15);
+            color: #856404;
+        }
+
+        .high-expense {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            border-color: #f5c6cb;
+        }
+
+        .high-expense .expense-amount,
+        .high-expense .amount-cell {
+            background: rgba(220, 53, 69, 0.15);
+            color: #721c24;
+        }
+
+        /* ===== ACCESSIBILITY IMPROVEMENTS ===== */
+        .nav-item:focus,
+        .logout-btn:focus,
+        .sidebar-brand:focus {
+            outline: 2px solid rgba(255, 255, 255, 0.5);
+            outline-offset: 2px;
+        }
+
+        /* ===== PERFORMANCE OPTIMIZATIONS ===== */
+        .sidebar,
+        .main-content {
+            will-change: transform;
+        }
+
+        /* ===== PRINT STYLES ===== */
+        @media print {
+            .sidebar,
+            .sidebar-footer {
+                display: none;
+            }
+            
+            .main-content {
+                flex: none;
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
     <div class="app-container">
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <a href="{% url 'expenses:list' %}" class="sidebar-brand">
-                    <i class="bi bi-graph-up"></i>
-                    FinanceTracker
+        <!-- ===== SIDEBAR NAVIGATION ===== -->
+        <aside class="sidebar" role="navigation" aria-label="Main navigation">
+            <header class="sidebar-header">
+                <a href="{% url 'expenses:list' %}" class="sidebar-brand" aria-label="Finance Tracker Home">
+                    <i class="bi bi-graph-up" aria-hidden="true"></i>
+                    <span>FinanceTracker</span>
                 </a>
-            </div>
+            </header>
             
-            <div class="sidebar-nav">
-                <a href="{% url 'expenses:list' %}" class="nav-item {% if request.resolver_match.url_name == 'list' %}active{% endif %}">
-                    <i class="bi bi-list-ul"></i>
-                    Expense List
+            <nav class="sidebar-nav" role="navigation">
+                <a href="{% url 'expenses:list' %}" 
+                   class="nav-item {% if request.resolver_match.url_name == 'list' %}active{% endif %}"
+                   aria-label="View expense list">
+                    <i class="bi bi-list-ul" aria-hidden="true"></i>
+                    <span>Expense List</span>
                 </a>
-                <a href="{% url 'expenses:add' %}" class="nav-item {% if request.resolver_match.url_name == 'add' %}active{% endif %}">
-                    <i class="bi bi-plus-circle"></i>
-                    Add Expense
+                
+                <a href="{% url 'expenses:add' %}" 
+                   class="nav-item {% if request.resolver_match.url_name == 'add' %}active{% endif %}"
+                   aria-label="Add new expense">
+                    <i class="bi bi-plus-circle" aria-hidden="true"></i>
+                    <span>Add Expense</span>
                 </a>
-                <a href="{% url 'expenses:import' %}" class="nav-item {% if request.resolver_match.url_name == 'import' %}active{% endif %}">
-                    <i class="bi bi-upload"></i>
-                    Import CSV
+                
+                <a href="{% url 'expenses:import' %}" 
+                   class="nav-item {% if request.resolver_match.url_name == 'import' %}active{% endif %}"
+                   aria-label="Import expenses from CSV">
+                    <i class="bi bi-upload" aria-hidden="true"></i>
+                    <span>Import CSV</span>
                 </a>
-                <a href="{% url 'expenses:calendar' %}" class="nav-item {% if request.resolver_match.url_name == 'calendar' %}active{% endif %}">
-                    <i class="bi bi-calendar3"></i>
-                    Calendar
+                
+                <a href="{% url 'expenses:calendar' %}" 
+                   class="nav-item {% if request.resolver_match.url_name == 'calendar' %}active{% endif %}"
+                   aria-label="View expense calendar">
+                    <i class="bi bi-calendar3" aria-hidden="true"></i>
+                    <span>Calendar</span>
                 </a>
-                <a href="{% url 'expenses:chart' %}" class="nav-item {% if request.resolver_match.url_name == 'chart' %}active{% endif %}">
-                    <i class="bi bi-bar-chart"></i>
-                    Charts
+                
+                <a href="{% url 'expenses:chart' %}" 
+                   class="nav-item {% if request.resolver_match.url_name == 'chart' %}active{% endif %}"
+                   aria-label="View expense charts">
+                    <i class="bi bi-bar-chart" aria-hidden="true"></i>
+                    <span>Charts</span>
                 </a>
-            </div>
+            </nav>
             
-            <div class="sidebar-footer">
-                <a href="{% url 'logout' %}" class="logout-btn">
-                    <i class="bi bi-box-arrow-right"></i>
-                    Logout
+            <footer class="sidebar-footer">
+                <a href="{% url 'logout' %}" class="logout-btn" aria-label="Logout from application">
+                    <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+                    <span>Logout</span>
                 </a>
-            </div>
-        </div>
+            </footer>
+        </aside>
 
-        <!-- Main Content -->
-        <div class="main-content">
+        <!-- ===== MAIN CONTENT AREA ===== -->
+        <main class="main-content" role="main">
             <div class="content-wrapper">
                 {% block content %}
                 {% endblock %}
             </div>
-        </div>
+        </main>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- ===== JAVASCRIPT DEPENDENCIES ===== -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" 
+            integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" 
+            crossorigin="anonymous"></script>
+    
+    <!-- ===== CUSTOM JAVASCRIPT ===== -->
+    <script>
+        // ===== PERFORMANCE OPTIMIZATIONS =====
+        document.addEventListener('DOMContentLoaded', function() {
+            // Preload critical resources
+            const criticalLinks = document.querySelectorAll('.nav-item[href]');
+            criticalLinks.forEach(link => {
+                if (link.href && !link.href.includes('#')) {
+                    const prefetchLink = document.createElement('link');
+                    prefetchLink.rel = 'prefetch';
+                    prefetchLink.href = link.href;
+                    document.head.appendChild(prefetchLink);
+                }
+            });
+
+            // Add smooth scrolling to content wrapper
+            const contentWrapper = document.querySelector('.content-wrapper');
+            if (contentWrapper) {
+                contentWrapper.style.scrollBehavior = 'smooth';
+            }
+
+            // Enhance mobile navigation
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                item.addEventListener('touchstart', function() {
+                    this.style.transform = 'scale(0.95)';
+                });
+                
+                item.addEventListener('touchend', function() {
+                    this.style.transform = '';
+                });
+            });
+        });
+
+        // ===== ERROR HANDLING =====
+        window.addEventListener('error', function(e) {
+            // Silent error handling for production
+            // In production, you might want to send this to an error tracking service
+        });
+
+        // ===== ACCESSIBILITY ENHANCEMENTS =====
+        document.addEventListener('keydown', function(e) {
+            // Escape key to close modals
+            if (e.key === 'Escape') {
+                const modals = document.querySelectorAll('.modal.show');
+                modals.forEach(modal => {
+                    const modalInstance = bootstrap.Modal.getInstance(modal);
+                    if (modalInstance) {
+                        modalInstance.hide();
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html> 
