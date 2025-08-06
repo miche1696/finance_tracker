@@ -13,7 +13,8 @@
       </a>
     </div>
   </div>
-  <table class="table table-bordered">
+  
+  <table class="table table-bordered calendar-table">
     <thead>
       <tr>
         <th>Mon</th>
@@ -29,10 +30,24 @@
       {% for week in calendar %}
         <tr>
           {% for cell in week %}
-            <td class="calendar-cell {% if cell.total > 500 %}high-expense{% endif %}" style="vertical-align: top;">
+            <td class="calendar-cell {% if cell.day %}{% if cell.total > 500 %}high-expense{% elif cell.total > 300 %}medium-expense{% elif cell.total > 100 %}low-expense{% endif %}{% endif %}" 
+                style="vertical-align: top; cursor: pointer; position: relative;"
+                {% if cell.day and cell.expenses %}
+                  data-bs-toggle="modal" 
+                  data-bs-target="#expenseModal"
+                  data-date="{{ cell.date|date:'Y-m-d' }}"
+                  data-total="{{ cell.total }}"
+                  data-expense-count="{{ cell.expenses|length }}"
+                  onclick="showExpenseDetails('{{ cell.date|date:'Y-m-d' }}', '{{ cell.total }}', '{{ cell.expenses|length }}')"
+                {% endif %}>
               {% if cell.day %}
-                <strong>{{ cell.day }}</strong><br/>
-                €{{ cell.total }}
+                <div class="calendar-day-content">
+                  <strong>{{ cell.day }}</strong>
+                  <div class="expense-total">€{{ cell.total }}</div>
+                  {% if cell.expenses %}
+                    <div class="expense-count">{{ cell.expenses|length }} expense{{ cell.expenses|length|pluralize }}</div>
+                  {% endif %}
+                </div>
               {% endif %}
             </td>
           {% endfor %}
@@ -40,4 +55,193 @@
       {% endfor %}
     </tbody>
   </table>
+
+  <!-- Expense Details Modal -->
+  <div class="modal fade" id="expenseModal" tabindex="-1" aria-labelledby="expenseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="expenseModalLabel">Expense Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="expense-summary mb-3">
+            <div class="row">
+              <div class="col-md-4">
+                <div class="summary-card">
+                  <div class="summary-label">Date</div>
+                  <div class="summary-value" id="modalDate"></div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="summary-card">
+                  <div class="summary-label">Total Amount</div>
+                  <div class="summary-value" id="modalTotal"></div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="summary-card">
+                  <div class="summary-label">Number of Expenses</div>
+                  <div class="summary-value" id="modalCount"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div id="expenseList">
+            <!-- Expense list will be loaded here -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary" id="viewAllExpenses">
+            <i class="bi bi-list-ul"></i> View All Expenses for This Day
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .calendar-table {
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .calendar-cell {
+      min-height: 80px;
+      padding: 8px;
+      transition: all 0.2s ease;
+      border: 1px solid #e9ecef;
+    }
+    
+    .calendar-cell:hover {
+      background-color: #f8f9fa;
+      transform: scale(1.02);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .calendar-day-content {
+      text-align: center;
+    }
+    
+    .expense-total {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #495057;
+      margin-top: 4px;
+    }
+    
+    .expense-count {
+      font-size: 0.75rem;
+      color: #6c757d;
+      margin-top: 2px;
+    }
+    
+    .high-expense {
+      background-color: #f8d7da;
+      border-color: #f5c6cb;
+    }
+    
+    .medium-expense {
+      background-color: #fff3cd;
+      border-color: #ffeaa7;
+    }
+    
+    .low-expense {
+      background-color: #d1ecf1;
+      border-color: #bee5eb;
+    }
+    
+    .summary-card {
+      text-align: center;
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border: 1px solid #e9ecef;
+    }
+    
+    .summary-label {
+      font-size: 0.875rem;
+      color: #6c757d;
+      font-weight: 500;
+    }
+    
+    .summary-value {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #495057;
+      margin-top: 0.5rem;
+    }
+    
+    .expense-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem;
+      border: 1px solid #e9ecef;
+      border-radius: 6px;
+      margin-bottom: 0.5rem;
+      background: white;
+    }
+    
+    .expense-info {
+      flex: 1;
+    }
+    
+    .expense-vendor {
+      font-weight: 600;
+      color: #495057;
+    }
+    
+    .expense-category {
+      font-size: 0.875rem;
+      color: #6c757d;
+    }
+    
+    .expense-amount {
+      font-weight: 700;
+      color: #dc3545;
+    }
+  </style>
+
+  <script>
+    function showExpenseDetails(date, total, count) {
+      // Update modal content
+      document.getElementById('modalDate').textContent = new Date(date).toLocaleDateString();
+      document.getElementById('modalTotal').textContent = '€' + parseFloat(total).toFixed(2);
+      document.getElementById('modalCount').textContent = count;
+      
+      // Load expense details via AJAX
+      fetch(`/expenses/calendar/day/${date}/`)
+        .then(response => response.json())
+        .then(data => {
+          const expenseList = document.getElementById('expenseList');
+          expenseList.innerHTML = '';
+          
+          data.expenses.forEach(expense => {
+            const expenseItem = document.createElement('div');
+            expenseItem.className = 'expense-item';
+            expenseItem.innerHTML = `
+              <div class="expense-info">
+                <div class="expense-vendor">${expense.vendor}</div>
+                <div class="expense-category">${expense.category}${expense.subcategory ? ' > ' + expense.subcategory : ''}</div>
+              </div>
+              <div class="expense-amount">€${parseFloat(expense.amount).toFixed(2)}</div>
+            `;
+            expenseList.appendChild(expenseItem);
+          });
+        })
+        .catch(error => {
+          console.error('Error loading expense details:', error);
+          document.getElementById('expenseList').innerHTML = '<p class="text-muted">Error loading expense details.</p>';
+        });
+      
+      // Set up redirect button
+      document.getElementById('viewAllExpenses').onclick = function() {
+        window.location.href = `/expenses/?date_after=${date}&date_before=${date}`;
+      };
+    }
+  </script>
 {% endblock %} 

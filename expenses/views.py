@@ -15,7 +15,7 @@ from django.conf import settings
 import os
 import csv
 import tempfile
-from datetime import date
+from datetime import date, datetime
 from .models import Expense, UserCategory, UserSubcategory
 from .filters import ExpenseFilter
 from .utils import get_month_calendar
@@ -278,3 +278,40 @@ def import_expenses(request):
             return render(request, 'expenses/import_expenses.html')
     
     return render(request, 'expenses/import_expenses.html')
+
+
+def get_expenses_by_date(request, date_str):
+    """Get expenses for a specific date via AJAX"""
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Authentication required'}, status=401)
+    
+    try:
+        # Parse the date string
+        expense_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        
+        # Get expenses for the user on that date
+        expenses = Expense.objects.for_user(request.user).filter(date=expense_date)
+        
+        # Serialize expenses for JSON response
+        expense_data = []
+        for expense in expenses:
+            expense_data.append({
+                'id': expense.id,
+                'vendor': expense.vendor,
+                'amount': str(expense.amount),
+                'category': expense.category,
+                'subcategory': expense.subcategory,
+                'notes': expense.notes,
+                'date': expense.date.strftime('%Y-%m-%d')
+            })
+        
+        return JsonResponse({
+            'date': date_str,
+            'expenses': expense_data,
+            'count': len(expense_data)
+        })
+        
+    except ValueError:
+        return JsonResponse({'error': 'Invalid date format'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
