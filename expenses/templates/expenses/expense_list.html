@@ -76,6 +76,7 @@
                                 <th><i class="bi bi-calendar3"></i> Date</th>
                                 <th><i class="bi bi-shop"></i> Vendor</th>
                                 <th><i class="bi bi-tag"></i> Category</th>
+                                <th><i class="bi bi-folder2-open"></i> Subcategory</th>
                                 <th><i class="bi bi-currency-dollar"></i> Amount</th>
                                 <th><i class="bi bi-gear"></i> Actions</th>
                             </tr>
@@ -85,7 +86,8 @@
                             <tr class="{% if expense.amount > 100 %}high-expense{% endif %}">
                                 <td>{{ expense.date|date:"M d, Y" }}</td>
                                 <td>{{ expense.vendor }}</td>
-                                <td>{{ expense.category }}{% if expense.subcategory %} > {{ expense.subcategory }}{% endif %}</td>
+                                <td>{{ expense.category }}</td>
+                                <td>{{ expense.subcategory|default:"—" }}</td>
                                 <td class="amount-cell">${{ expense.amount|floatformat:2 }}</td>
                                 <td>
                                     <div class="btn-group btn-group-sm">
@@ -316,6 +318,8 @@
     font-weight: 600;
     color: #28a745;
 }
+
+
 
 .high-expense {
     background-color: #fff3cd !important;
